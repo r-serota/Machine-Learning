@@ -1,9 +1,10 @@
 # Project ML
 
 rm(list=ls()) # to delete all variables
+setwd("C:/Users/anaik/Desktop/BigData/Project/student")
 
 library(data.table)
-# library(dplyr)
+library(dplyr)
 library(tidyr)
 library(leaps)
 
@@ -11,10 +12,18 @@ data <- read.table("student-por.csv",sep=";",header=TRUE)
 data <- na.omit(data)
 data <- setDT(data)
 
-VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
+# Cleaning our dataset
+data[,G1 := NULL] # deleting a variable
+data[,G2 := NULL]
+data[,school := NULL]
+data[,Mjob := NULL]
+data[,Fjob := NULL]
+data[,guardian := NULL]
+data[,traveltime := NULL]
+data[,romantic := NULL]
+data[,goout := NULL]
 
-data[,G2 := NULL] # deleting a variable
-data[,G3 := NULL]
+VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
 
 # TODO (create a function)
 data$Medu <- factor(data$Medu, order=T, levels = c(0,1,2,3,4))
@@ -30,16 +39,22 @@ data$health <- factor(data$health, order=T, levels = c(1,2,3,4,5))
 
 
 # Model selection 
+# We use FSS
 
-regfit.full = regsubsets(G3 ~ ., data = data)
-regfit.full = regsubsets(G3 ~ ., data = data, really.big=T)
-summary(regfit.full)
+# TODO (fix FSS)
+# regfit.fwd = regsubsets(G3 ~ ., data = data, nvmax = 67, method = "forward")
+# summary(regfit.fwd)
+# 
+# plot(regfit.fwd, scale = "Cp") # plot C_p
+# 
+# reg.summary = summary(regfit.fwd)
+# plot(reg.summary$cp, xlab = "Number of Variables", ylab = "Cp")
+# imin = which.min(reg.summary$cp)
+# imin
+# points(imin, reg.summary$cp[imin], pch = 20, col = "red") # add a point to the plot to highlight the minimum
+# 
+# coef(regfit.fwd, imin)
+# 
+# reg.summary$cp
 
-regfit.full = regsubsets(G3 ~ ., data = data, nvmax = 150)
 
-
-# Variables to exclude:
-# school
-# Mjob
-# Fjob
-# guardian 
