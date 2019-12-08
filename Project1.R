@@ -6,14 +6,21 @@ library(data.table)
 library(dplyr)
 library(tidyr)
 library(leaps)
+library(pROC)
+library(ROCR)
+library(randomForest)
 
 data <- read.table("student-por.csv",sep=";",header=TRUE)
 data <- na.omit(data)
 data <- setDT(data)
 
+# split students into good or bad - "by hand"
+data <- data[, studentPerformance := ifelse(G3 <= 10,0, 1)]
+
 # Cleaning our dataset
 data[,G1 := NULL] # deleting a variable
 data[,G2 := NULL]
+data[,G3 := NULL]
 data[,school := NULL]
 data[,Mjob := NULL]
 data[,Fjob := NULL]
@@ -24,8 +31,6 @@ data[,goout := NULL]
 
 VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
 
-# split students into good or bad - "by hand"
-data <- data[, studentPerformance := ifelse(G3 <= 10,0, 1)]
 
 # TODO (create a function)
 data$Medu <- factor(data$Medu, order=T, levels = c(0,1,2,3,4))
@@ -57,6 +62,38 @@ data$studentPerformance <- as.factor(data$studentPerformance)
 # coef(regfit.fwd, imin)
 # 
 # reg.summary$cp
+
+
+# Classification by random forest
+
+train_data_percent = 70
+
+acc = 0.0
+repeat_each = 20
+for (i in 1:repeat_each) {
+  
+  trainDataIndices = sample(nrow(data), nrow(data) * train_data_percent / 100)
+  
+  train.data = data[trainDataIndices,]
+  test.data = data[-trainDataIndices,]
+  
+  testDataResponse = test.data[, 24] # TODO - extract column in more clean way
+  testDataInput = test.data[, -24]
+  
+  randomForestResult = randomForest(studentPerformance ~ ., data = train.data)
+  
+  stopifnot(randomForestResult$type == 'classification') # make sure we applied random forest correctly
+  
+  actual = predict(randomForestResult, testDataInput, type = 'prob')[, 2]
+  
+  perf = performance(prediction(actual, testDataResponse), "auc")
+  auc_value = perf@y.values[[1]]
+  
+  acc = acc + auc_value
+}
+mean_auc = acc / repeat_each
+
+
 
 
 
