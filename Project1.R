@@ -1,7 +1,6 @@
 # Project ML
 
 rm(list=ls()) # to delete all variables
-setwd("C:/Users/anaik/Desktop/BigData/Project/student")
 
 library(data.table)
 library(dplyr)
@@ -25,17 +24,19 @@ data[,goout := NULL]
 
 VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
 
+# split students into good or bad - "by hand"
+data <- data[, studentPerformance := ifelse(G3 <= 10,0, 1)]
+
 # TODO (create a function)
 data$Medu <- factor(data$Medu, order=T, levels = c(0,1,2,3,4))
 data$Fedu <- factor(data$Fedu, order=T, levels = c(0,1,2,3,4))
-data$traveltime <- factor(data$traveltime, order=T, levels = c(1,2,3,4))
 data$studytime <- factor(data$studytime, order=T, levels = c(1,2,3,4))
 data$famrel <- factor(data$famrel, order=T, levels = c(1,2,3,4,5))
 data$freetime <- factor(data$freetime, order=T, levels = c(1,2,3,4,5))
-data$goout <- factor(data$goout, order=T, levels = c(1,2,3,4,5))
 data$Dalc <- factor(data$Dalc, order=T, levels = c(1,2,3,4,5))
 data$Walc <- factor(data$Walc, order=T, levels = c(1,2,3,4,5))
 data$health <- factor(data$health, order=T, levels = c(1,2,3,4,5))
+data$studentPerformance <- as.factor(data$studentPerformance)
 
 
 # Model selection 
@@ -56,5 +57,7 @@ data$health <- factor(data$health, order=T, levels = c(1,2,3,4,5))
 # coef(regfit.fwd, imin)
 # 
 # reg.summary$cp
+
+
 
 
