@@ -93,8 +93,12 @@ for (i in 1:repeat_each) {
 }
 mean_auc = acc / repeat_each
 
+# Use random forest to show variable importance
+trainDataIndices = sample(nrow(data), nrow(data) * train_data_percent / 100)
+train.data = data[trainDataIndices,]
+test.data = data[-trainDataIndices,]
 
-
-
+rf = randomForest(studentPerformance ~ ., data = train.data)
+varImpPlot(rf) # plot importance
 
 
