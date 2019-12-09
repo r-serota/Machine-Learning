@@ -70,11 +70,6 @@ pie(table(data$studentPerformance)) # TODO: change to ggplot2
 # only output
 ```
 
-
-
-
-
-
 # Classification
 
 ## Model selection
@@ -125,18 +120,18 @@ Basemodel <- mean(1 == dataLogit_test$studentPerformance)
 ```{r }
 
 dataSVM <- subset(data, select = -c(G3))
-dataSVM <- dataSVM[-sample(nrow(dataSVM),1),] # I excluded one observation in order to have the same size of training and test set. Otherwise, there was a problem to calculate the confusion matrix. TODO: excluding one observation randomly
 
 # dividing our dataset into training and test sets (50%/50%)
-train = sample(nrow(dataSVM), 0.5*nrow(dataSVM))
+train = sample(nrow(dataSVM), 0.8*nrow(dataSVM))
 dataSVM_train = dataSVM[train, ]
 dataSVM_test = dataSVM[-train, ]
 
+dataSVM_test.response <- dataSVM_test$studentPerformance
 
 ### 10-CV using `tune()`
 set.seed(1)
 # cross-validating the tuning parameters gamma and lambda for the radial SVM om training data
-tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM[train, ], kernel = "radial",
+tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",
                 ranges = list(cost = c(1e-10, 1e-5, 0.1 ,1 ,10 ,100 ,1000), gamma = c(0.5, 1, 2, 3, 4)))
 summary(tune.out)
 
@@ -145,15 +140,16 @@ svmfit.opt = tune.out$best.model
 summary(svmfit.opt)
 
 # confusion matrix on the test set
-table(true = dataSVM[-train, ]$studentPerformance,  pred = predict(svmfit.opt, newx = dataSVM[-train, ]))
+table(true = dataSVM_test.response,  pred = predict(svmfit.opt, dataSVM_test))
 
-SVMErrorRate <- (1 - mean(predict(svmfit.opt, newx = dataSVM[-train, ]) == dataSVM[-train, ]$studentPerformance)) # error rate
+SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.response)) # error rate
 
 # TODO: in our dataset Number of Support Vectors is very large. How should we pick C to change it?
 # TODO: how to pick kernel, cost, gamma
 # TODO: add ROC curve
 # TODO: parameter tuning with library(kernlab)
 # TODO: why can I not pick another proportion of training/test set???
+# TODO: probably because our dataset contains a lot of categorical variables, SVM method behavies very poorly. We need to verify it, and write about it in out report
 
 # Basic version
 # svmfit = svm(factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",  gamma = 2, cost = 1)
