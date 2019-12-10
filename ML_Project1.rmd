@@ -2,24 +2,20 @@
 title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
-output: 
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-    fig_caption: true
+output: html_document
 ---
 
 ```{r echo=F, warning=F, message=F}
 # Libraries
   library(rmarkdown)
-  library(data.table)
   library(dplyr)
   library(tidyr)
   library(leaps)
   library(e1071)
   library(ROCR)
   library(caTools)
+  library(gbm)
+  library(randomForest)
 ```
 
 # Abstract
@@ -74,14 +70,15 @@ Some of the attributes where excluded, because of reasons (TODO - rewrite this):
 ```{r warning=F, message=F}
 
 # Reading the file and cleaning data
+setwd("C:/Users/anaik/Desktop/BigData/Project/student")
 data <- read.table("student-por.csv", sep=";", header=TRUE)
 data <- na.omit(data)
 
-# dropping variables
-data <- subset(data, select = -c(G1, G2, school, Mjob, Fjob, guardian, traveltime, romantic, goout))
-
 # adding the dependent variable
 data$studentPerformance <- ifelse(data$G3 <= 10, "Bad", "Good")
+
+# dropping variables
+data <- subset(data, select = -c(G1, G2, school, Mjob, Fjob, guardian, traveltime, romantic, goout))
 
 VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
 
@@ -111,10 +108,6 @@ pie(table(data$studentPerformance)) # TODO: change to ggplot2
 ```
 
 
-```{r echo = FALSE, warning=FALSE, message=F}
-# only output
-```
-
 # Classification
 
 ## Model selection
@@ -124,7 +117,7 @@ pie(table(data$studentPerformance)) # TODO: change to ggplot2
 dataLogit <- subset(data, select = -c(G3))
 
 set.seed(1011)
-labelsLogit = sample.split(dataLogit$studentPerformance, SplitRatio = 4/5) # TODO: how large should be the SplitRatio ??? 
+labelsLogit = sample.split(dataLogit$studentPerformance, SplitRatio = 4/5) # We split the data in the proportion 80%/20%
 
 # checking if the split is balanced
 dataLogit_train = dataLogit[labelsLogit, ]
@@ -155,8 +148,7 @@ perf = performance(predob, "tpr", "fpr")
 plot(perf, main = "Logistic Regression", colorize = TRUE)
 LogitAUC <- as.numeric(performance(predob, "auc")@y.values)
 
-# what is the success rate on the test data of the baseline model?
-# with prediction 1 for every observation, the  total test set success rate of the baseline model is
+# total test set success rate of the baseline model (with prediction 1 for every observation)
 Basemodel <- mean(1 == dataLogit_test$studentPerformance)
 ```
 
@@ -166,7 +158,7 @@ Basemodel <- mean(1 == dataLogit_test$studentPerformance)
 
 dataSVM <- subset(data, select = -c(G3))
 
-# dividing our dataset into training and test sets (50%/50%)
+# dividing our dataset into training and test sets (80%/20%)
 train = sample(nrow(dataSVM), 0.8*nrow(dataSVM))
 dataSVM_train = dataSVM[train, ]
 dataSVM_test = dataSVM[-train, ]
@@ -196,11 +188,6 @@ SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.resp
 # TODO: why can I not pick another proportion of training/test set???
 # TODO: probably because our dataset contains a lot of categorical variables, SVM method behavies very poorly. We need to verify it, and write about it in out report
 
-# Basic version
-# svmfit = svm(factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",  gamma = 2, cost = 1)
-# svm.pred <- predict(svmfit, newx = dataSVM[-train, ])
-# table(dataSVM[-train, ]$studentPerformance, svm.pred)
-# summary(svmfit)
 ```
 
 ## K-Nearest Neigbours
@@ -223,6 +210,100 @@ SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.resp
 
 # Summary
 
+
+
+
+```{r}
+
+## RF
+
+dataRF <- subset(data, select = -c(G3))
+
+labelsRF = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
+dataRF_train = dataRF[labelsRF,]
+
+# checking if 500 trees is enough for our dataset
+checking = randomForest(studentPerformance ~ ., data = dataRF_train)
+checkigPlot <- plot(checking$err.rate[,1]) # Yes
+
+auc_value20 = 0.0
+repeat_each = 20
+for (i in 1:repeat_each) {
+  
+  labelsRF = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
+  dataRF_train = dataRF[labelsRF,]
+  dataRF_test = dataRF[!labelsRF,]
+ 
+  randomForestResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 4, ntree = 500) 
+  # We use m = 4, because sqrt(23) = 4.8, p = 23
+  
+  rf.probs = predict(randomForestResult, dataRF_test, type = "prob")[, 2]
+  predob.rf = prediction(rf.probs, dataRF_test$studentPerformance)
+  perf = performance(predob.rf, "tpr", "fpr")
+  
+  auc_value <- as.numeric(performance(predob.rf, "auc")@y.values)
+  auc_value20 = auc_value20 + auc_value
+}
+
+mean_auc = auc_value20 / repeat_each
+
+# variable importance
+rf = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 4, ntree = 500)
+varImpPlot(rf) # plot importance
+
+# Plot for RF
+par(mfrow = c(1, 2))
+plot(perf, main = "Random Forest, m = 4", colorize = TRUE) 
+
+# TODO: make sure if m = 23
+# TODO: what about OOB?
+
+
+### Bagging:
+BaggingResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 23, ntree = 500)
+bagg.probs = predict(BaggingResult, dataRF_test, type = "prob")[, 2]
+predob.bagg = prediction(bagg.probs, dataRF_test$studentPerformance)
+perf = performance(predob.bagg, "tpr", "fpr")
+plot(perf, main = "Bagging, m = 23", colorize = TRUE)
+par(mfrow = c(1, 1))
+
+cat("RandomForest (m = 4): ", mean_auc)
+cat("\n")
+cat("Bagging      (m = 23): ", as.numeric(performance(predob.bagg, "auc")@y.values))
+
+
+### Boosting
+
+dataBoosting <- subset(data, select = -c(G3))
+dataBoosting$studentPerformance <- as.integer(dataBoosting$studentPerformance) 
+
+labelsBoosting = sample.split(dataBoosting$studentPerformance, SplitRatio = 4/5)
+dataBoosting_train = dataBoosting[labelsBoosting,]
+dataBoosting_test = dataBoosting[!labelsBoosting,]
+
+# We use CV to pick the number of trees.
+boostingCV = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', n.trees = 10000, 
+                 shrinkage = 0.01, cv.folds = 10)
+# Bernoulli requires the response to be in {0,1}. That's why we use (studentPerformance-1)
+best.iter = gbm.perf(boostingCV, method = "cv")# Check the best iteration
+# We fit the optimal boosted tree.
+boostingBest = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', 
+                   n.trees = best.iter, shrinkage = 0.01)
+
+# test set ROC curve and the AUC for the best boosted tree.
+boost.probs = predict(boostingBest, dataBoosting_test, n.trees = best.iter, type = "response")
+predob = prediction(boost.probs, dataBoosting_test$studentPerformance)
+perf = performance(predob, "tpr", "fpr")
+plot(perf, main = "Boosting with B = 760", colorize = TRUE) #TODO: B
+as.numeric(performance(predob, "auc")@y.values)
+
+# Variable importance plot
+summary(boostingBest)
+
+#TODO: how to pick shrinkage, d, distribution
+
+
+```
 
 
 
