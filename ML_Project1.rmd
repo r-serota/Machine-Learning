@@ -2,7 +2,12 @@
 title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
-output: html_document
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -20,7 +25,13 @@ output: html_document
 
 # Abstract
 
+This work focuses on data gathered in a survey of student in portugese class. The dataset contains information about students and their performance in school. Our work tests main predictors of students grade. As a part of our experiments, classification methods were used to predict given information about student if he or she will pass the exam. Also, we used regression tools to predict number of points student will gather.
 
+We begin by describing in-depth our dataset. Later, we clean the dataset. We remove some variables and justify our decision. Also students were divided by their final grade to those who passed their class on did not. The division was made by passing score equal to 60% of available points.
+
+In the next chapter we used classification methods to predict whether or not student will pass the exam. For this task we used logistic regression, support vector machines, KNN and random forest. 
+
+In third chapter regression methods are used to predict number of points student will gather on their final exam. 
 
 # Dataset:
 
@@ -54,7 +65,7 @@ Experiments conducted in this document use following attributes:
 * `health`: current health status (numeric: from 1 - very bad to 5 - very good)
 * `absences`: number of school absences (numeric: from 0 to 93)
 
-Some of the attributes where excluded, because of reasons (TODO - rewrite this):.
+Some of the attributes where excluded:
 
 * `Mjob`: mother's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
 * `Fjob`: father's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
@@ -63,25 +74,39 @@ Some of the attributes where excluded, because of reasons (TODO - rewrite this):
 * `traveltime`: home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour)
 * `goout`: going out with friends (numeric: from 1 - very low to 5 - very high)
 
-... 
-
+Those variables seem to be rather irrelative with respect to predicting student performances, therefore they were excluded from the model.
 
 ## Cleaning data
+
+At first, we have to load our dataset into memory. 
 ```{r warning=F, message=F}
 
 # Reading the file and cleaning data
-setwd("C:/Users/anaik/Desktop/BigData/Project/student")
 data <- read.table("student-por.csv", sep=";", header=TRUE)
 data <- na.omit(data)
 
-# adding the dependent variable
-data$studentPerformance <- ifelse(data$G3 <= 10, "Bad", "Good")
+```
 
+Later, we remove not important variables.
+```{r warning=F, message=F}
 # dropping variables
 data <- subset(data, select = -c(G1, G2, school, Mjob, Fjob, guardian, traveltime, romantic, goout))
+```
 
+Variables were removed because of their insiginificance to student performance on their final exam. We belived that those features would cause the model to overfit and thus perform worse on test dataset. Variables G1 and G2 (first and second exam results) were excluded because we want to simulate situation where student has not yet taken any exam, and we want to predict if he will pass or not. 
+
+Students are devided into those who passed the exam and who did not. The decision was made by passing score of 60%. Maximum number of score on that exam was 20, therefore passing score equals to 12.
+```{r warning=F, message=F}
+# adding the dependent variable
+data$studentPerformance <- ifelse(data$G3 <= 12, "Bad", "Good")
+```
+
+```{r warning=F, message=F, echo=F}
 VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
+```
 
+Clean the data - make sure appropriate variables are treated as factorial and ordered values.
+```{r warning=F, message=F}
 # changing type of variables
 data$Medu <- factor(data$Medu, order=T, levels = c(0,1,2,3,4))
 data$Fedu <- factor(data$Fedu, order=T, levels = c(0,1,2,3,4))
@@ -92,21 +117,19 @@ data$Dalc <- factor(data$Dalc, order=T, levels = c(1,2,3,4,5))
 data$Walc <- factor(data$Walc, order=T, levels = c(1,2,3,4,5))
 data$health <- factor(data$health, order=T, levels = c(1,2,3,4,5))
 data$studentPerformance <- as.factor(data$studentPerformance)
-
 ```
 
 ## Descriptive analysis
 
-
-
+We begin by describing our dataset more in-depth. 
 
 ```{r echo = FALSE, warning=FALSE, message=F}
 summary(data)
-hist(data$G3)
+hist(data$G3, breaks=0:20)
 pie(table(data$studentPerformance)) # TODO: change to ggplot2
-
 ```
 
+Histogram of students point in the final exam looks like a Gaussian bell curve.
 
 # Classification
 
@@ -195,23 +218,6 @@ SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.resp
 ## Linear Discriminant Analysis
 
 ## Random Forests, Boosting, Bagging
-
-## Classification summary
-
-# Regression
-
-## Model selection
-
-## Linear regression
-
-## Random Forests
-
-## Regression summary
-
-# Summary
-
-
-
 
 ```{r}
 
@@ -304,6 +310,25 @@ summary(boostingBest)
 
 
 ```
+
+## Classification summary
+
+# Regression
+
+## Model selection
+
+## Linear regression
+
+## Random Forests
+
+## Regression summary
+
+# Summary
+
+
+
+
+
 
 
 
