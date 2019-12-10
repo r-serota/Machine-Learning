@@ -21,6 +21,7 @@ output:
   library(caTools)
   library(gbm)
   library(randomForest)
+  library(ggplot2)
 ```
 
 ```{r setup, include=F}
@@ -88,11 +89,8 @@ The following list shows the atributes excluded from the research:
 * `traveltime`: home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour)
 * `goout`: going out with friends (numeric: from 1 - very low to 5 - very high)
 
-... 
 
-
-## Cleaning data
-```{r warning=F, message=F}
+```{r echo=F, warning=F, message=F}
 
 # Reading the file and cleaning data
 data <- read.table("student-por.csv", sep=";", header=TRUE)
@@ -120,13 +118,32 @@ data$studentPerformance <- as.factor(data$studentPerformance)
 ## Descriptive analysis
 
 ```{r echo = FALSE, warning=FALSE, message=F}
-summary(data)
+
 hist(data$G3, breaks=0:20)
-pie(table(data$studentPerformance)) # TODO: change to ggplot2
+abline(v = 12, col="blue", lwd=4, lty=1)
+```
+
+As can be seen on the histogram, there are few students with a number of points below 5 as well as few students with nearly maximum number of points. 
+Most of learners obtained half of possible number of points.
+
+The below plot represents a proportion of students whose passed and failed the exam.
+
+```{r echo=F, fig.width=5, fig.height=5}
+blank_theme <- theme_minimal()+   theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+    panel.border = element_blank(), panel.grid=element_blank(), axis.ticks = element_blank(), plot.title=element_text(size=14, face="bold"))
+
+data_pie <- table(data$studentPerformance)
+data_pie <- as.data.frame(data_pie)
+colnames(data_pie) <- c("group", "value")
+
+ggplot(data_pie, aes(x="", y=value, fill=group)) + geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) + blank_theme + theme(axis.text.x=element_blank()) +
+  geom_text(aes(y = value/3 + c(0, cumsum(value)[-length(value)]), label = paste0(round((value/sum(data_pie$value)*100),2), "%")), size=5) + scale_fill_brewer("Blues") + 
+  guides(fill=guide_legend("Student performance"))
 
 ```
 
-Histogram of students point in the final exam looks like a Gaussian bell curve.
+As shown in the figure above, the proportion of passed and failed exams is nearly equal.
 
 # Classification
 
@@ -191,7 +208,7 @@ LogitSuccessRate_train
 
 ## Support Vector Machine
 
-In this chapter we use SVM for predicting if student will pass the final exam. 10-CV was used to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is cost of ). As a kernel function the "radial" function was used.
+In this chapter we use SVM for predicting if student will pass the final exam. 10-CV was used to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel function the "radial" function was used.
 
 
 After assesing tuning parameters we measure the performance of SVM algorithm with the computed parameters.
