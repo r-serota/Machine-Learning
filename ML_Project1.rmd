@@ -2,7 +2,12 @@
 title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
-output: html_document
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -20,21 +25,27 @@ output: html_document
 
 # Abstract
 
-This work focuses on data gathered in a survey of a secondary school's students. The dataset contains information about students and their performance in school. Our work has two major goaals: first to predict whether a student will pass an exam or not, secondary to predict the exact number of points student will receive/achieve(?).
+This work focuses on data gathered in a survey of a secondary school's students. The dataset contains information about students  and their performance in school. Our work has two major goals: first to predict whether a student will pass an exam or not, second to predict the exact number of points student will score.
+
 
 We begin by elaborating the used dataset as well as methods which we applied to clean the database. 
 
+
 In the next chapter we implemented various classification methods to predict whether a student will have a good or bad exam's performance. For this task we used logistic regression, support vector machines, KNN and random forest. 
 
-In the 3. chapter, we explored regression methods to predict the number of points students will achieve(?) in their final exam. We implemented ... (TODO:which methods)
+
+In the 3. chapter, we explored regression methods to predict the number of points students will score in their final exam. We implemented ... (TODO:which methods)
+
 
 At the end, we summarised as well as compared obtained Machine Learning algorithms scores.
 
-
 # Dataset:
 
-Data was obtained in a survey of a secondary school's students. It is available under the link https://www.kaggle.com/uciml/student-alcohol-consumption. The dataset contains variables about social, study, ... aspects as well as information about obtained number of points in Maths and Portugese language. Because of major part of the results in Portugese language and our reluctance to combine grades from entirely different courses, we concentrated on Portugese language's student in our research. What is more, we decided to exclude a few variables, because of a negligible relationship with the dependent variable from our project. Moreover, variables G1 and G2 (first and second exam results) were excluded because we want to simulate a situation where student has not taken any exam yet and then predict if he will pass or not. 
-Additionaly, we created a variable 'Student_performance' which divides the students into those who passed the exam and who did not. The division was made by passing score of 60%. Maximum number of score on that exam was 20, therefore passing score amounts to 12.
+Data was obtained in a survey of a secondary school's students. It is available under the link \href{https://www.kaggle.com/uciml/student-alcohol-consumption}.
+
+
+The dataset contains variables about social, personal and study aspects as well as information about obtained number of points in Maths and Portugese language. Because of major part of the results in Portugese language and our reluctance to combine grades from entirely different courses, we concentrated on Portugese language's student in our research. What is more, we decided to exclude a few variables, because of a negligible relationship with the dependent variable from our project. Moreover, variables G1 and G2 (first and second exam results) were excluded because we want to simulate a situation where student has not taken any exam yet and predict if he will pass the exam or not. 
+Additionaly, we created a variable 'studentPerformance' which divides the students into those who passed the exam and who did not. The division was made by passing score of 60%. Maximum number of score on that exam was 20, therefore passing score amounts to 12.
 
 The following list shows the atributes used in the research:
 
@@ -89,8 +100,6 @@ data$studentPerformance <- ifelse(data$G3 < 12, "Bad", "Good")
 # dropping variables
 data <- subset(data, select = -c(G1, G2, school, Mjob, Fjob, guardian, traveltime, romantic, goout))
 
-VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
-
 # changing type of variables
 data$Medu <- factor(data$Medu, order=T, levels = c(0,1,2,3,4))
 data$Fedu <- factor(data$Fedu, order=T, levels = c(0,1,2,3,4))
@@ -106,9 +115,6 @@ data$studentPerformance <- as.factor(data$studentPerformance)
 
 ## Descriptive analysis
 
-Histogram of students point in the final exam looks like a Gaussian bell curve.
-
-
 ```{r echo = FALSE, warning=FALSE, message=F}
 summary(data)
 hist(data$G3, breaks=0:20)
@@ -116,6 +122,7 @@ pie(table(data$studentPerformance)) # TODO: change to ggplot2
 
 ```
 
+Histogram of students point in the final exam looks like a Gaussian bell curve.
 
 # Classification
 
@@ -124,7 +131,7 @@ pie(table(data$studentPerformance)) # TODO: change to ggplot2
 ## Logistic regression
 
 In this chapter, some results concerning Logistic regression were presented.  
-On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting it's better to compare algorithms' scores on the test set. Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance. It results in the correct prediction at the level of 75.19%.
+On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting it is better to compare algorithms' scores on the test set. Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance. It results in the correct prediction at the level of 75.19%.
 In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing. Its success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
  
 As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.0 - 0.7. 
@@ -160,7 +167,6 @@ LogitConfMat
 dataLogit_test$studentPerformance <- ifelse(dataLogit_test$studentPerformance=="Good",1,0)
 LogitSuccessRate <- mean(glm.pred == dataLogit_test$studentPerformance)
 LogitSuccessRate
-## TODO: upewnic sie, ze 1 oznacza zawsze Good
 
 # test set ROC curve and AUC
 predob = prediction(glm.probs, dataLogit_test$studentPerformance)
@@ -182,6 +188,14 @@ LogitSuccessRate_train
 
 ## Support Vector Machine
 
+In this chapter we use SVM for predicting if student will pass the final exam. 10-CV was used to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is cost of ). As a kernel function the "radial" function was used.
+
+
+After assesing tuning parameters we measure the performance of SVM algorithm with the computed parameters.
+
+
+SVM is not a probability classifier. The result of its prediction is simply a binary response. Therefore we cannot use ROC curve and AUC metric to measure its accuracy and compare it to other classification algorithms. As an accuracy metric error rate was used. Also, the confusion matrix was calculated.
+
 ```{r }
 
 dataSVM <- subset(data, select = -c(G3))
@@ -198,7 +212,6 @@ set.seed(1)
 # cross-validating the tuning parameters gamma and lambda for the radial SVM om training data
 tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",
                 ranges = list(cost = c(1e-10, 1e-5, 0.1 ,1 ,10 ,100 ,1000), gamma = c(0.5, 1, 2, 3, 4)))
-summary(tune.out)
 
 # retrieve the best model
 svmfit.opt = tune.out$best.model
@@ -211,12 +224,14 @@ SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.resp
 
 # TODO: in our dataset Number of Support Vectors is very large. How should we pick C to change it?
 # TODO: how to pick kernel, cost, gamma
-# TODO: add ROC curve
 # TODO: parameter tuning with library(kernlab)
-# TODO: why can I not pick another proportion of training/test set???
 # TODO: probably because our dataset contains a lot of categorical variables, SVM method behavies very poorly. We need to verify it, and write about it in out report
 
 ```
+
+As we can see the number of support vector in our experiment is equal to 519 (much more the $p=23$). Probably the reason for such a high number is the most our predictors are factorial variables, and many of them are binary. 
+
+The error rate of SVM classifier is equal to $0.2692308$.
 
 ## K-Nearest Neigbours
 
@@ -374,6 +389,8 @@ Random forest importance variables: absences, Medu, health, reason, studytime.
 
 Boosting AUC = 0.7820606
 Boostring importance variables: failures, Medu,, absences, reason
+
+SVM error rate = 0.2692308
 
 # Regression
 
