@@ -388,7 +388,7 @@ dataBoosting_test = dataBoosting[!labelsBoosting,]
 boostingCV = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', n.trees = 10000, 
                  shrinkage = 0.01, cv.folds = 10)
 # Bernoulli requires the response to be in {0,1}. That's why we use (studentPerformance-1)
-best.iter = gbm.perf(boostingCV, method = "cv")# Check the best iteration
+best.iter = gbm.perf(boostingCV, method = "cv", plot.it = F)# Check the best iteration
 # We fit the optimal boosted tree.
 boostingBest = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', 
                    n.trees = best.iter, shrinkage = 0.01)
@@ -404,7 +404,7 @@ as.numeric(performance(predob, "auc")@y.values)
 summary(boostingBest)
 
 #TODO: how to pick shrinkage, d, distribution
-
+#TODO: print all valus on y axis on "Relative influence" plot
 
 ```
 
