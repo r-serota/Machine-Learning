@@ -3,11 +3,7 @@ title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
 output: 
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-    fig_caption: true
+  html_document
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -29,31 +25,25 @@ output:
 set.seed(1011) # set random number generator seed for replicability
 ```
 
-# Abstract
+## Abstract
 
 This work focuses on data gathered in a survey of a secondary school's students. The dataset contains information about students  and their performance in school. Our work has two major goals: first to predict whether a student will pass an exam or not, second to predict the exact number of points student will score.
 
-
 We begin by elaborating the used dataset as well as methods which we applied to clean the database. 
-
-
 In the next chapter we implemented various classification methods to predict whether a student will have a good or bad exam's performance. For this task we used logistic regression, support vector machines, KNN and random forest. 
-
-
 In the 3. chapter, we explored regression methods to predict the number of points students will score in their final exam. We implemented ... (TODO:which methods)
-
-
 At the end, we summarised as well as compared obtained Machine Learning algorithms scores.
 
-# Dataset:
 
-Data was obtained in a survey of a secondary school's students. It is available under the link \href{https://www.kaggle.com/uciml/student-alcohol-consumption}.
+## Dataset
 
+Data was obtained in a survey of a secondary school's students. It is available under the link \href{https://archive.ics.uci.edu/ml/datasets/student+performance}.  
 
-The dataset contains variables about social, personal and study aspects as well as information about obtained number of points in Maths and Portugese language. Because of major part of the results in Portugese language and our reluctance to combine grades from entirely different courses, we concentrated on Portugese language's student in our research. What is more, we decided to exclude a few variables, because of a negligible relationship with the dependent variable from our project. Moreover, variables G1 and G2 (first and second exam results) were excluded because we want to simulate a situation where student has not taken any exam yet and predict if he will pass the exam or not. 
+The dataset contains variables about social, personal and study aspects as well as information about obtained number of points in Maths and Portugese language. Because of major part of the results in Portugese language and our reluctance to combine grades from entirely different courses, we concentrated on Portugese language's student in our research.  
+What is more, we decided to exclude a few variables, because of a negligible relationship with the dependent variable from our project. Moreover, variables G1 and G2 (first and second exam results) were excluded because we want to simulate a situation where student has not taken any exam yet and predict if he will pass the exam or not.  
 Additionaly, we created a variable 'studentPerformance' which divides the students into those who passed the exam and who did not. The division was made by passing score of 60%. Maximum number of score on that exam was 20, therefore passing score amounts to 12.
 
-The following list shows the atributes used in the research:
+The following list shows the dependent variables used in the research:
 
 * `school`: student's school (binary: "GP" - Gabriel Pereira or "MS" - Mousinho da Silveira)
 * `sex`: tudent's sex (binary: "F" - female or "M" - male)
@@ -89,6 +79,10 @@ The following list shows the atributes excluded from the research:
 * `traveltime`: home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour)
 * `goout`: going out with friends (numeric: from 1 - very low to 5 - very high)
 
+  
+In the classification task, G3 (final grade, numeric variable from 0 to 20) served as the dependent variable. 
+In the regression task, the variable studentPerformance was our object of study.
+final grade (numeric: from 0 to 20, output target)
 
 ```{r echo=F, warning=F, message=F}
 
@@ -119,8 +113,9 @@ data$studentPerformance <- as.factor(data$studentPerformance)
 
 ```{r echo = FALSE, warning=FALSE, message=F}
 
-hist(data$G3, breaks=0:20)
+hist(data$G3, breaks=0:20, main="G3 (final grade)")
 abline(v = 12, col="blue", lwd=4, lty=1)
+
 ```
 
 As can be seen on the histogram, there are few students with a number of points below 5 as well as few students with nearly maximum number of points. 
@@ -139,17 +134,17 @@ colnames(data_pie) <- c("group", "value")
 ggplot(data_pie, aes(x="", y=value, fill=group)) + geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start=0) + blank_theme + theme(axis.text.x=element_blank()) +
   geom_text(aes(y = value/3 + c(0, cumsum(value)[-length(value)]), label = paste0(round((value/sum(data_pie$value)*100),2), "%")), size=5) + scale_fill_brewer("Blues") + 
-  guides(fill=guide_legend("Student performance"))
+  guides(fill=guide_legend("")) + ggtitle("Student performance")
 
 ```
 
 As shown in the figure above, the proportion of passed and failed exams is nearly equal.
 
-# Classification
+## Classification
 
-## Model selection
+### Model selection
 
-## Logistic regression
+### Logistic regression
 
 In this chapter, some results concerning Logistic regression were presented.  
 On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting it is better to compare algorithms' scores on the test set. Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance. It results in the correct prediction at the level of 75.19%.
@@ -206,15 +201,15 @@ LogitSuccessRate_train <- mean(glm.pred_train == dataLogit_train$studentPerforma
 LogitSuccessRate_train
 ```
 
-## Support Vector Machine
+### Support Vector Machines
 
-In this chapter we use SVM for predicting if student will pass the final exam. 10-CV was used to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel function the "radial" function was used.
+In this chapter we use SVM for predicting if student will pass the final exam. 10-CV was used to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel the "radial" function was used.
 
 
 After assesing tuning parameters we measure the performance of SVM algorithm with the computed parameters.
 
 
-SVM is not a probability classifier. The result of its prediction is simply a binary response. Therefore we cannot use ROC curve and AUC metric to measure its accuracy and compare it to other classification algorithms. As an accuracy metric error rate was used. Also, the confusion matrix was calculated.
+SVM is not a probability classifier. The result of its prediction is simply a binary response. Therefore we cannot use ROC curve and AUC metric to measure its accuracy and compare it to other classification algorithms. That is why we used an accuracy metric error rate to check the SVM performance. What is more, we calculated also the confusion matrix.
 
 ```{r }
 
@@ -248,18 +243,19 @@ SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.resp
 
 ```
 
-As we can see the number of support vector in our experiment is equal to 519 (much more the $p=23$). Probably the reason for such a high number is the most our predictors are factorial variables, and many of them are binary. 
+As we can see in the results, the number of Support Vectors in our experiment is equal to 519 (much more than the $p=23$). We assume a reason for such a high value can be the fact that the major part of predictors in our dataset are factorial and many of them are also binary. 
 
 The error rate of SVM classifier is equal to $0.2692308$.
 
-## K-Nearest Neigbours
+### K-Nearest Neigbours
 
-## Linear Discriminant Analysis
+### Linear Discriminant Analysis
 
-## Random Forests, Boosting, Bagging
+### Random Forests and Bagging
 
-This section first verifies the default tuning parameters for random forest - 500 decision trees in a model. 
-Later, we compare performance of random forest and bagging method (special case of random forest where $m=p$) by measuring averaged AUC of models. Also, importance plot is created.
+This chapter concentrates on predicting the students' perfomance using Random Forests and Bagging.  
+At the beginning, we checked wheter the default value for tuning parameter of Random Forests (500 decision trees in a model) is proper for our dataset. 
+Later, we compare performance of Random Forests and Bagging method by measuring averaged AUC of models. Moreover, we created Importance Plots for applied algorithms.
 
 
 ```{r}
@@ -273,9 +269,9 @@ checking = randomForest(studentPerformance ~ ., data = dataRF_train)
 plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate")  
 ```
 
-The OOB error rate is lowest for 500 trees used. Therefore we conclude that $B=500$ is sufficient.
+The OOB error rate decreases significantly to around 50 trees. For a larger number of trees the difference of the OOB error is slight. Therefore we conclude that $B=500$ is sufficient.
 
-Now we build multiple models of default random forest, test it accuracy and average the results. Accuracy of model is measured by AUC (Area Under the Curve). Random Forest uses here default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification). The model is run 20 times and results averaged for better estimation.
+After that, we built multiple models of Random Forests, tested its accuracy and averaged the obtained results. Accuracy of model is measured by AUC (Area Under the Curve). Random Forest uses here default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification). The model is run 20 times and results averaged for better estimation.
 ```{r}
 auc_value20 = 0.0
 repeat_each = 20
@@ -396,7 +392,7 @@ For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
 Importance measured by boosting selected number of failures as the most relative predictor. After that, importanct variables were: mother education, number of absences, reason to choose particular school.
 
 
-## Classification summary
+### Classification summary
 
 Default random foreset AUC = 0.8011636
 Random forest importance variables: absences, Medu, health, reason, studytime.
@@ -406,17 +402,19 @@ Boostring importance variables: failures, Medu,, absences, reason
 
 SVM error rate = 0.2692308
 
-# Regression
+## Regression
 
-## Model selection
+### Model selection
 
-## Linear regression
+### Linear regression
 
-## Random Forests
+### Random Forests
 
-## Regression summary
+### ...
 
-# Summary
+### Regression summary
+
+## Summary
 
 
 
