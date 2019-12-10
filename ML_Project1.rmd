@@ -271,7 +271,7 @@ plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate")
 
 The OOB error rate decreases significantly to around 50 trees. For a larger number of trees the difference of the OOB error is slight. Therefore we conclude that $B=500$ is sufficient.
 
-After that, we built multiple models of Random Forests, tested its accuracy and averaged the obtained results. Accuracy of model is measured by AUC (Area Under the Curve). Random Forest uses here default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification). The model is run 20 times and results averaged for better estimation.
+After that, we built multiple models of Random Forests, tested its accuracy and averaged the results for obtaining a better estimation. Accuracy of model was measured by AUC (Area Under the Curve). While applying Random Forest we used default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification).
 ```{r}
 auc_value20 = 0.0
 repeat_each = 20
@@ -293,8 +293,8 @@ for (i in 1:repeat_each) {
 auc_value20 / repeat_each # mean auc
 ```
 
-The accuracy of classification by default random forest measured by AUC equal to $0.8011636$. 
- 
+The accuracy of Classification Random Forest measured by AUC is equal to $0.8011636$. 
+
 Let us check importance of each variable with respect to predicting studentPerformance.
 
 ```{r }
@@ -302,11 +302,10 @@ rf = randomForest(studentPerformance ~ ., data = dataRF_train)
 varImpPlot(rf) # plot importance
 ```
 
-The importance of each variable is measured for each tree by the improvement in the split-criterion. Later the results for each tree are collected.
-Improvement of split-criterion at each node was measured by Gini Index. 
-On the plot we can see that most important predictors of students success is: number of their absences, mothers education, measure of health, reason for school choice and study time.
+The importance of variables was measured for each tree by the improvement in the split-criterion. As a measure of improvement in split-criterion, Gini Index was served.   
+On the above plot we can see that the most important predictors of students success are: number of their absences, mother education, measure of health, reason for school choice and study time.
 
-Now we plot the ROC curve for random forest with default $mtry$ and with $mtry=p$ which is equivalent to bagging method. 
+Below, we plotted the ROC curve for Random Forest with default $mtry$ and with $mtry=p$ which is equivalent to bagging method. 
 
 ```{r }
 # TODO: make sure if m = 23
@@ -356,6 +355,12 @@ For bagging ($m = 23$) AUC curve is equal to $0.7941455$.
 By applying bagging method we see a slight degradation of model accuracy.
 
 ### Boosting
+
+This chapter focuses on prediction the student performance by using Boosting methos.
+
+At the beginning, we used Cross-Validation which enabled us to pick a proper number of trees equal to ???. According to this value, we built a Boosting model, plotted the ROC curve, calucalted the AUC and showed which variables were considered as the most important.
+
+
 ```{r }
 dataBoosting <- subset(data, select = -c(G3))
 dataBoosting$studentPerformance <- as.integer(dataBoosting$studentPerformance) 
@@ -389,16 +394,17 @@ summary(boostingBest)
 ```
 
 For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
-Importance measured by boosting selected number of failures as the most relative predictor. After that, importanct variables were: mother education, number of absences, reason to choose particular school.
+According to the obtained results of Boosting, the most relative predictor is 'number of failures'. A the next important variables the Boosting Algorithm indicated 'mother education', 'number of absences', 'reason to choose particular school'.
 
 
 ### Classification summary
 
-Default random foreset AUC = 0.8011636
-Random forest importance variables: absences, Medu, health, reason, studytime.
+
+Random Forest AUC = 0.8011636
+Random Forest importance variables: absences, Medu, health, reason, studytime.
 
 Boosting AUC = 0.7820606
-Boostring importance variables: failures, Medu,, absences, reason
+Boosting importance variables: failures, Medu,, absences, reason
 
 SVM error rate = 0.2692308
 
