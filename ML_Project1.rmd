@@ -2,12 +2,7 @@
 title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
-output: 
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-    fig_caption: true
+output: html_document
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -25,20 +20,23 @@ output:
 
 # Abstract
 
-This work focuses on data gathered in a survey of student in portugese class. The dataset contains information about students and their performance in school. Our work tests main predictors of students grade. As a part of our experiments, classification methods were used to predict given information about student if he or she will pass the exam. Also, we used regression tools to predict number of points student will gather.
+This work focuses on data gathered in a survey of a secondary school's students. The dataset contains information about students and their performance in school. Our work has two major goaals: first to predict whether a student will pass an exam or not, secondary to predict the exact number of points student will receive/achieve(?).
 
-We begin by describing in-depth our dataset. Later, we clean the dataset. We remove some variables and justify our decision. Also students were divided by their final grade to those who passed their class on did not. The division was made by passing score equal to 60% of available points.
+We begin by elaborating the used dataset as well as methods which we applied to clean the database. 
 
-In the next chapter we used classification methods to predict whether or not student will pass the exam. For this task we used logistic regression, support vector machines, KNN and random forest. 
+In the next chapter we implemented various classification methods to predict whether a student will have a good or bad exam's performance. For this task we used logistic regression, support vector machines, KNN and random forest. 
 
-In third chapter regression methods are used to predict number of points student will gather on their final exam. 
+In the 3. chapter, we explored regression methods to predict the number of points students will achieve(?) in their final exam. We implemented ... (TODO:which methods)
+
+At the end, we summarised as well as compared obtained Machine Learning algorithms scores.
+
 
 # Dataset:
 
-The data were obtained in a survey of students math and portuguese language courses in secondary school. It contains a lot of interesting social, gender and study information about students. 
-Our project consists of predicting student's performance. Predicting results in mathematics and portugese without decoupling them seemed irrational. Therefore we had to choose student performance either in portugese or in mathematics. We decided to exclude survey conducted in mathematics, and focus only on portugese classes.
+Data was obtained in a survey of a secondary school's students. It is available under the link https://www.kaggle.com/uciml/student-alcohol-consumption. The dataset contains variables about social, study, ... aspects as well as information about obtained number of points in Maths and Portugese language. Because of major part of the results in Portugese language and our reluctance to combine grades from entirely different courses, we concentrated on Portugese language's student in our research. What is more, we decided to exclude a few variables, because of a negligible relationship with the dependent variable from our project. Moreover, variables G1 and G2 (first and second exam results) were excluded because we want to simulate a situation where student has not taken any exam yet and then predict if he will pass or not. 
+Additionaly, we created a variable 'Student_performance' which divides the students into those who passed the exam and who did not. The division was made by passing score of 60%. Maximum number of score on that exam was 20, therefore passing score amounts to 12.
 
-Experiments conducted in this document use following attributes:
+The following list shows the atributes used in the research:
 
 * `school`: student's school (binary: "GP" - Gabriel Pereira or "MS" - Mousinho da Silveira)
 * `sex`: tudent's sex (binary: "F" - female or "M" - male)
@@ -65,7 +63,7 @@ Experiments conducted in this document use following attributes:
 * `health`: current health status (numeric: from 1 - very bad to 5 - very good)
 * `absences`: number of school absences (numeric: from 0 to 93)
 
-Some of the attributes where excluded:
+The following list shows the atributes excluded from the research:
 
 * `Mjob`: mother's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
 * `Fjob`: father's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
@@ -74,39 +72,25 @@ Some of the attributes where excluded:
 * `traveltime`: home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour)
 * `goout`: going out with friends (numeric: from 1 - very low to 5 - very high)
 
-Those variables seem to be rather irrelative with respect to predicting student performances, therefore they were excluded from the model.
+... 
+
 
 ## Cleaning data
-
-At first, we have to load our dataset into memory. 
 ```{r warning=F, message=F}
 
 # Reading the file and cleaning data
+setwd("C:/Users/anaik/Desktop/BigData/Project/student")
 data <- read.table("student-por.csv", sep=";", header=TRUE)
 data <- na.omit(data)
 
-```
+# adding the dependent variable
+data$studentPerformance <- ifelse(data$G3 <= 10, "Bad", "Good")
 
-Later, we remove not important variables.
-```{r warning=F, message=F}
 # dropping variables
 data <- subset(data, select = -c(G1, G2, school, Mjob, Fjob, guardian, traveltime, romantic, goout))
-```
 
-Variables were removed because of their insiginificance to student performance on their final exam. We belived that those features would cause the model to overfit and thus perform worse on test dataset. Variables G1 and G2 (first and second exam results) were excluded because we want to simulate situation where student has not yet taken any exam, and we want to predict if he will pass or not. 
-
-Students are devided into those who passed the exam and who did not. The decision was made by passing score of 60%. Maximum number of score on that exam was 20, therefore passing score equals to 12.
-```{r warning=F, message=F}
-# adding the dependent variable
-data$studentPerformance <- ifelse(data$G3 <= 12, "Bad", "Good")
-```
-
-```{r warning=F, message=F, echo=F}
 VariablesClasses <- data %>% summarise_all(class) %>% gather # checking variables' classes
-```
 
-Clean the data - make sure appropriate variables are treated as factorial and ordered values.
-```{r warning=F, message=F}
 # changing type of variables
 data$Medu <- factor(data$Medu, order=T, levels = c(0,1,2,3,4))
 data$Fedu <- factor(data$Fedu, order=T, levels = c(0,1,2,3,4))
@@ -117,26 +101,37 @@ data$Dalc <- factor(data$Dalc, order=T, levels = c(1,2,3,4,5))
 data$Walc <- factor(data$Walc, order=T, levels = c(1,2,3,4,5))
 data$health <- factor(data$health, order=T, levels = c(1,2,3,4,5))
 data$studentPerformance <- as.factor(data$studentPerformance)
+
 ```
 
 ## Descriptive analysis
 
-We begin by describing our dataset more in-depth. 
+Histogram of students point in the final exam looks like a Gaussian bell curve.
+
 
 ```{r echo = FALSE, warning=FALSE, message=F}
 summary(data)
-hist(data$G3, breaks=0:20)
+hist(data$G3)
 pie(table(data$studentPerformance)) # TODO: change to ggplot2
+
 ```
 
-Histogram of students point in the final exam looks like a Gaussian bell curve.
 
 # Classification
 
 ## Model selection
 
 ## Logistic regression
-```{r fig.align="center", fig.width = 4, fig.height = 5 }
+
+In this chapter, some results concerning Logistic regression were presented.  
+On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting it's better to compare algorithms' scores on the test set. Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance. It results in the correct prediction at the level of 75.19%.
+In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing. Its success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
+ 
+As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.0 - 0.7. 
+...
+The AUC for the logistic regression amounts to 78.86%.
+
+```{r }
 dataLogit <- subset(data, select = -c(G3))
 
 set.seed(1011)
@@ -159,25 +154,35 @@ glm.pred = ifelse(glm.probs > 0.5, 1, 0)
 
 # test sample confusion matrix
 LogitConfMat <- table(true = dataLogit_test$studentPerformance, predict = glm.pred)
+LogitConfMat
 
 # test sample total success rate
 dataLogit_test$studentPerformance <- ifelse(dataLogit_test$studentPerformance=="Good",1,0)
 LogitSuccessRate <- mean(glm.pred == dataLogit_test$studentPerformance)
+LogitSuccessRate
 ## TODO: upewnic sie, ze 1 oznacza zawsze Good
 
 # test set ROC curve and AUC
 predob = prediction(glm.probs, dataLogit_test$studentPerformance)
 perf = performance(predob, "tpr", "fpr")
-plot(perf, main = "Logistic Regression", colorize = TRUE)
+plot(perf, main = "Logistic Regression", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
 LogitAUC <- as.numeric(performance(predob, "auc")@y.values)
 
 # total test set success rate of the baseline model (with prediction 1 for every observation)
 Basemodel <- mean(1 == dataLogit_test$studentPerformance)
+
+# Confusion matrix and SuccessRate on training set
+glm.probs_train = predict(glm.fit, newdata = dataLogit_train, type = "response") 
+glm.pred_train = ifelse(glm.probs_train > 0.5, 1, 0)
+LogitConfMat_train <- table(true = dataLogit_train$studentPerformance, predict = glm.pred_train)
+dataLogit_train$studentPerformance <- ifelse(dataLogit_train$studentPerformance=="Good",1,0)
+LogitSuccessRate_train <- mean(glm.pred_train == dataLogit_train$studentPerformance)
+LogitSuccessRate_train
 ```
 
 ## Support Vector Machine
 
-```{r}
+```{r }
 
 dataSVM <- subset(data, select = -c(G3))
 
@@ -191,18 +196,18 @@ dataSVM_test.response <- dataSVM_test$studentPerformance
 ### 10-CV using `tune()`
 set.seed(1)
 # cross-validating the tuning parameters gamma and lambda for the radial SVM om training data
-#tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",
-#                ranges = list(cost = c(1e-10, 1e-5, 0.1 ,1 ,10 ,100 ,1000), gamma = c(0.5, 1, 2, 3, 4)))
-#summary(tune.out)
+tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",
+                ranges = list(cost = c(1e-10, 1e-5, 0.1 ,1 ,10 ,100 ,1000), gamma = c(0.5, 1, 2, 3, 4)))
+summary(tune.out)
 
 # retrieve the best model
-#svmfit.opt = tune.out$best.model
-#summary(svmfit.opt)
+svmfit.opt = tune.out$best.model
+summary(svmfit.opt)
 
 # confusion matrix on the test set
-#table(true = dataSVM_test.response,  pred = predict(svmfit.opt, dataSVM_test))
+table(true = dataSVM_test.response,  pred = predict(svmfit.opt, dataSVM_test))
 
-#SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.response)) # error rate
+SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.response)) # error rate
 
 # TODO: in our dataset Number of Support Vectors is very large. How should we pick C to change it?
 # TODO: how to pick kernel, cost, gamma
@@ -219,26 +224,36 @@ set.seed(1)
 
 ## Random Forests, Boosting, Bagging
 
-First, clean and split data. 
+## Classification summary
+
+# Regression
+
+## Model selection
+
+## Linear regression
+
+## Random Forests
+
+## Regression summary
+
+# Summary
+
+
+
+
 ```{r}
+
+## RF
 
 dataRF <- subset(data, select = -c(G3))
 
 labelsRF = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
 dataRF_train = dataRF[labelsRF,]
-```
 
-Default number of trees for random forest is $B=500$. Verify if that is enough.
-```{r }
 # checking if 500 trees is enough for our dataset
 checking = randomForest(studentPerformance ~ ., data = dataRF_train)
-plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate") 
-```
-The OOB error rate is lowest for 500 trees used. Therefore we conclude that $B=500$ is sufficient.
+checkigPlot <- plot(checking$err.rate[,1]) # Yes
 
-Now we build multiple models of default random forest, test it accuracy and average the results. Accuracy of model is measured by AUC (Area Under the Curve). Random Forest uses here default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification). The model is run 20 times and results averaged for better estimation.
-```{r }
-set.seed(17) # for replicability
 auc_value20 = 0.0
 repeat_each = 20
 for (i in 1:repeat_each) {
@@ -247,7 +262,8 @@ for (i in 1:repeat_each) {
   dataRF_train = dataRF[labelsRF,]
   dataRF_test = dataRF[!labelsRF,]
  
-  randomForestResult = randomForest(studentPerformance ~ ., data = dataRF_train)
+  randomForestResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 4, ntree = 500) 
+  # We use m = 4, because sqrt(23) = 4.8, p = 23
   
   rf.probs = predict(randomForestResult, dataRF_test, type = "prob")[, 2]
   predob.rf = prediction(rf.probs, dataRF_test$studentPerformance)
@@ -256,75 +272,36 @@ for (i in 1:repeat_each) {
   auc_value <- as.numeric(performance(predob.rf, "auc")@y.values)
   auc_value20 = auc_value20 + auc_value
 }
+
 mean_auc = auc_value20 / repeat_each
-mean_auc
-```
-The accuracy of classification by default random forest measured by AUC equal to $0.8011636$. 
 
-Let's check importance of each variable with respect to predicting studentPerformance.
-```{r }
-set.seed(17) # for replicability
-dataRF <- subset(data, select = -c(G3))
-rf = randomForest(studentPerformance ~ ., data = dataRF)
+# variable importance
+rf = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 4, ntree = 500)
 varImpPlot(rf) # plot importance
-```
-The importance of each variable is measured for each tree by the improvement in the split-criterion. Later the results for each tree are collected.
-Improvement of split-criterion at each node was measured by Gini Index. 
-On the plot we can see that most important predictors of students success is: number of their absences, mothers education, measure of health, reason for school choice and study time.
 
-
-Now we plot ROC curve for random forest with default $mtry$ and with $mtry=p$ which is equivalent to bagging method. 
-```{r }
-set.seed(17) # for replicability
 # Plot for RF
 par(mfrow = c(1, 2))
-randomForestResult = randomForest(studentPerformance ~ ., data = dataRF_train)
-rf.probs = predict(randomForestResult, dataRF_test, type = "prob")[, 2]
-perf = performance(predob.rf, "tpr", "fpr")
 plot(perf, main = "Random Forest, m = 4", colorize = TRUE) 
 
+# TODO: make sure if m = 23
 # TODO: what about OOB?
 
+
+### Bagging:
 BaggingResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 23, ntree = 500)
 bagg.probs = predict(BaggingResult, dataRF_test, type = "prob")[, 2]
 predob.bagg = prediction(bagg.probs, dataRF_test$studentPerformance)
 perf = performance(predob.bagg, "tpr", "fpr")
 plot(perf, main = "Bagging, m = 23", colorize = TRUE)
 par(mfrow = c(1, 1))
-```
-
-Let's now compare averaged accouracy (measured by AUC) for default random forest and bagging method. Both errors were estimated by test data, and not by OOB error. 
-```{r }
-auc_value20 = 0.0
-repeat_each = 20
-for (i in 1:repeat_each) {
-  
-  labelsRF = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
-  dataRF_train = dataRF[labelsRF,]
-  dataRF_test = dataRF[!labelsRF,]
- 
-  BaggingResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 23, ntree = 500)
-  bagg.probs = predict(BaggingResult, dataRF_test, type = "prob")[, 2]
-  predob.bagg = prediction(bagg.probs, dataRF_test$studentPerformance)
-  
-  auc_value <- as.numeric(performance(predob.bagg, "auc")@y.values)
-  auc_value20 = auc_value20 + auc_value
-}
-mean_auc.bagging = auc_value20 / repeat_each
 
 cat("RandomForest (m = 4): ", mean_auc)
 cat("\n")
-cat("Bagging      (m = 23): ", mean_auc.bagging)
-```
+cat("Bagging      (m = 23): ", as.numeric(performance(predob.bagg, "auc")@y.values))
 
-For random forest ($m = 4$) AUC curve is equal to $0.8011636$.
-For bagging ($m = 23$) AUC curve is equal to $0.7941455$.
 
-By applying bagging method we see a slight degradation of model accuracy.
-
-```{r }
 ### Boosting
-set.seed(1)
+
 dataBoosting <- subset(data, select = -c(G3))
 dataBoosting$studentPerformance <- as.integer(dataBoosting$studentPerformance) 
 
@@ -333,7 +310,8 @@ dataBoosting_train = dataBoosting[labelsBoosting,]
 dataBoosting_test = dataBoosting[!labelsBoosting,]
 
 # We use CV to pick the number of trees.
-boostingCV = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', n.trees = 10000, shrinkage = 0.01, cv.folds = 10)
+boostingCV = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', n.trees = 10000, 
+                 shrinkage = 0.01, cv.folds = 10)
 # Bernoulli requires the response to be in {0,1}. That's why we use (studentPerformance-1)
 best.iter = gbm.perf(boostingCV, method = "cv")# Check the best iteration
 # We fit the optimal boosted tree.
@@ -351,34 +329,9 @@ as.numeric(performance(predob, "auc")@y.values)
 summary(boostingBest)
 
 #TODO: how to pick shrinkage, d, distribution
+
+
 ```
-For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
-Importance measured by boosting selected number of failures as the most relative predictor. After that, importanct variables were: mother education, number of absences, reason to choose particular school.
-
-## Classification summary
-
-Default random foreset AUC = 0.8011636
-Random forest importance variables: absences, Medu, health, reason, studytime.
-
-Boosting AUC = 0.7820606
-Boostring importance variables: failures, Medu,, absences, reason
-
-# Regression
-
-## Model selection
-
-## Linear regression
-
-## Random Forests
-
-## Regression summary
-
-# Summary
-
-
-
-
-
 
 
 
