@@ -2,8 +2,12 @@
 title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
-output: 
-  html_document
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -25,7 +29,7 @@ output:
 set.seed(1011) # set random number generator seed for replicability
 ```
 
-## Abstract
+# Abstract
 
 This work focuses on data gathered in a survey of a secondary school's students. The dataset contains information about students  and their performance in school. Our work has two major goals: first to predict whether a student will pass an exam or not, second to predict the exact number of points student will score.
 
@@ -35,9 +39,9 @@ In the 3. chapter, we explored regression methods to predict the number of point
 At the end, we summarised as well as compared obtained Machine Learning algorithms scores.
 
 
-## Dataset
+# Dataset
 
-Data was obtained in a survey of a secondary school's students. It is available under the link \href{https://archive.ics.uci.edu/ml/datasets/student+performance}.  
+Data was obtained in a survey of a secondary school's students. It is available under the link [https://archive.ics.uci.edu/ml/datasets/student+performance](https://archive.ics.uci.edu/ml/datasets/student+performance).
 
 The dataset contains variables about social, personal and study aspects as well as information about obtained number of points in Maths and Portugese language. Because of major part of the results in Portugese language and our reluctance to combine grades from entirely different courses, we concentrated on Portugese language's student in our research.  
 What is more, we decided to exclude a few variables, because of a negligible relationship with the dependent variable from our project. Moreover, variables G1 and G2 (first and second exam results) were excluded because we want to simulate a situation where student has not taken any exam yet and predict if he will pass the exam or not.  
@@ -109,9 +113,8 @@ data$studentPerformance <- as.factor(data$studentPerformance)
 
 ```
 
-## Descriptive analysis
 
-```{r echo = FALSE, warning=FALSE, message=F}
+```{r echo = FALSE, warning=FALSE, message=F, fig.align="center", fig.width=3, fig.height=3}
 
 hist(data$G3, breaks=0:20, main="G3 (final grade)")
 abline(v = 12, col="blue", lwd=4, lty=1)
@@ -123,7 +126,7 @@ Most of learners obtained half of possible number of points.
 
 The below plot represents a proportion of students whose passed and failed the exam.
 
-```{r echo=F, fig.width=5, fig.height=5}
+```{r echo=F, fig.width=4, fig.height=4, fig.align="center"}
 blank_theme <- theme_minimal()+   theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
     panel.border = element_blank(), panel.grid=element_blank(), axis.ticks = element_blank(), plot.title=element_text(size=14, face="bold"))
 
@@ -140,14 +143,14 @@ ggplot(data_pie, aes(x="", y=value, fill=group)) + geom_bar(width = 1, stat = "i
 
 As shown in the figure above, the proportion of passed and failed exams is nearly equal.
 
-## Classification
+# Classification
 
-### Model selection
+## Model selection
 
-### Logistic regression
+## Logistic regression
 
 In this chapter, some results concerning Logistic regression were presented.  
-On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting it is better to compare algorithms' scores on the test set. Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance. It results in the correct prediction at the level of 75.19%.
+On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting, it is better to compare algorithms' scores on the test set. Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance. It results in the correct prediction at the level of 75.19%.
 In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing. Its success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
  
 As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.0 - 0.7. 
@@ -157,14 +160,23 @@ The AUC for the logistic regression amounts to 78.86%.
 ```{r fig.align="center", fig.width = 4, fig.height = 5 }
 dataLogit <- subset(data, select = -c(G3))
 
-labelsLogit = sample.split(dataLogit$studentPerformance, SplitRatio = 4/5) # We split the data in the proportion 80%/20%
+# split the data in the proportion 80%/20%
+labelsLogit = sample.split(dataLogit$studentPerformance, SplitRatio = 4/5) 
 
-# checking if the split is balanced
 dataLogit_train = dataLogit[labelsLogit, ]
-dataLogit_trainMean <- mean(as.numeric(dataLogit_train$studentPerformance)-1)
 dataLogit_test = dataLogit[!labelsLogit, ]
-dataLogit_testMean <- mean(as.numeric(dataLogit_test$studentPerformance)-1)
 
+```
+
+
+```{r echo=F}
+# check if the split is balanced
+dataLogit_trainMean <- mean(as.numeric(dataLogit_train$studentPerformance)-1)
+dataLogit_testMean <- mean(as.numeric(dataLogit_test$studentPerformance)-1)
+```
+
+We calculate confusion matrix for threshold equal to $0.5$.
+```{r }
 # fit the logistic regression model on the training sample only
 glm.fit = glm(studentPerformance ~ ., data = dataLogit_train, family = binomial)
 
@@ -177,7 +189,10 @@ glm.pred = ifelse(glm.probs > 0.5, 1, 0)
 # test sample confusion matrix
 LogitConfMat <- table(true = dataLogit_test$studentPerformance, predict = glm.pred)
 LogitConfMat
+```
 
+
+```{r }
 # test sample total success rate
 dataLogit_test$studentPerformance <- ifelse(dataLogit_test$studentPerformance=="Good",1,0)
 LogitSuccessRate <- mean(glm.pred == dataLogit_test$studentPerformance)
@@ -201,7 +216,7 @@ LogitSuccessRate_train <- mean(glm.pred_train == dataLogit_train$studentPerforma
 LogitSuccessRate_train
 ```
 
-### Support Vector Machines
+## Support Vector Machines
 
 In this chapter we use SVM for predicting if student will pass the final exam. 10-CV was used to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel the "radial" function was used.
 
@@ -247,11 +262,11 @@ As we can see in the results, the number of Support Vectors in our experiment is
 
 The error rate of SVM classifier is equal to $0.2692308$.
 
-### K-Nearest Neigbours
+## K-Nearest Neigbours
 
-### Linear Discriminant Analysis
+## Linear Discriminant Analysis
 
-### Random Forests and Bagging
+## Random Forests and Bagging
 
 This chapter concentrates on predicting the students' perfomance using Random Forests and Bagging.  
 At the beginning, we checked wheter the default value for tuning parameter of Random Forests (500 decision trees in a model) is proper for our dataset. 
@@ -397,7 +412,7 @@ For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
 According to the obtained results of Boosting, the most relative predictor is 'number of failures'. A the next important variables the Boosting Algorithm indicated 'mother education', 'number of absences', 'reason to choose particular school'.
 
 
-### Classification summary
+## Classification summary
 
 
 Random Forest AUC = 0.8011636
@@ -408,19 +423,22 @@ Boosting importance variables: failures, Medu,, absences, reason
 
 SVM error rate = 0.2692308
 
-## Regression
+Logistic regression AUC 0.7886
 
-### Model selection
 
-### Linear regression
 
-### Random Forests
+# Regression
 
-### ...
+## Model selection
 
-### Regression summary
+## Linear regression
 
-## Summary
+## Random Forests
+
+## ...
+
+## Regression summary
+
 
 
 
