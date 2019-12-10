@@ -23,6 +23,11 @@ output:
   library(randomForest)
 ```
 
+```{r setup, include=F}
+# setwd("C:/Users/anaik/Desktop/BigData/Project/student")
+set.seed(1011) # set random number generator seed for replicability
+```
+
 # Abstract
 
 This work focuses on data gathered in a survey of a secondary school's students. The dataset contains information about students  and their performance in school. Our work has two major goals: first to predict whether a student will pass an exam or not, second to predict the exact number of points student will score.
@@ -90,7 +95,6 @@ The following list shows the atributes excluded from the research:
 ```{r warning=F, message=F}
 
 # Reading the file and cleaning data
-setwd("C:/Users/anaik/Desktop/BigData/Project/student")
 data <- read.table("student-por.csv", sep=";", header=TRUE)
 data <- na.omit(data)
 
@@ -141,7 +145,6 @@ The AUC for the logistic regression amounts to 78.86%.
 ```{r fig.align="center", fig.width = 4, fig.height = 5 }
 dataLogit <- subset(data, select = -c(G3))
 
-set.seed(1011)
 labelsLogit = sample.split(dataLogit$studentPerformance, SplitRatio = 4/5) # We split the data in the proportion 80%/20%
 
 # checking if the split is balanced
@@ -208,7 +211,6 @@ dataSVM_test = dataSVM[-train, ]
 dataSVM_test.response <- dataSVM_test$studentPerformance
 
 ### 10-CV using `tune()`
-set.seed(1)
 # cross-validating the tuning parameters gamma and lambda for the radial SVM om training data
 tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",
                 ranges = list(cost = c(1e-10, 1e-5, 0.1 ,1 ,10 ,100 ,1000), gamma = c(0.5, 1, 2, 3, 4)))
@@ -239,10 +241,11 @@ The error rate of SVM classifier is equal to $0.2692308$.
 
 ## Random Forests, Boosting, Bagging
 
+This section first verifies the default tuning parameters for random forest - 500 decision trees in a model. 
+Later, we compare performance of random forest and bagging method (special case of random forest where $m=p$) by measuring averaged AUC of models. Also, importance plot is created.
+
+
 ```{r}
-
-## RF
-
 dataRF <- subset(data, select = -c(G3))
 
 labelsRF = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
@@ -250,13 +253,13 @@ dataRF_train = dataRF[labelsRF,]
 
 # checking if 500 trees is enough for our dataset
 checking = randomForest(studentPerformance ~ ., data = dataRF_train)
-checkigPlot <- plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate")  
-# The OOB error rate is lowest for 500 trees used. Therefore we conclude that $B=500$ is sufficient.
+plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate")  
 ```
+
+The OOB error rate is lowest for 500 trees used. Therefore we conclude that $B=500$ is sufficient.
 
 Now we build multiple models of default random forest, test it accuracy and average the results. Accuracy of model is measured by AUC (Area Under the Curve). Random Forest uses here default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification). The model is run 20 times and results averaged for better estimation.
 ```{r}
-set.seed(17) # for replicability
 auc_value20 = 0.0
 repeat_each = 20
 for (i in 1:repeat_each) {
@@ -266,7 +269,6 @@ for (i in 1:repeat_each) {
   dataRF_test = dataRF[!labelsRF,]
  
   randomForestResult = randomForest(studentPerformance ~ ., data = dataRF_train)
-  # We use m = 4, because sqrt(23) = 4.8, p = 23
 
   rf.probs = predict(randomForestResult, dataRF_test, type = "prob")[, 2]
   predob.rf = prediction(rf.probs, dataRF_test$studentPerformance)
@@ -275,50 +277,49 @@ for (i in 1:repeat_each) {
   auc_value <- as.numeric(performance(predob.rf, "auc")@y.values)
   auc_value20 = auc_value20 + auc_value
 }
-
-mean_auc = auc_value20 / repeat_each
-mean_auc
+auc_value20 / repeat_each # mean auc
 ```
+
 The accuracy of classification by default random forest measured by AUC equal to $0.8011636$. 
  
-Let's check importance of each variable with respect to predicting studentPerformance.
-```{r}
+Let us check importance of each variable with respect to predicting studentPerformance.
 
-# variable importance
+```{r }
 rf = randomForest(studentPerformance ~ ., data = dataRF_train)
 varImpPlot(rf) # plot importance
 ```
+
 The importance of each variable is measured for each tree by the improvement in the split-criterion. Later the results for each tree are collected.
 Improvement of split-criterion at each node was measured by Gini Index. 
 On the plot we can see that most important predictors of students success is: number of their absences, mothers education, measure of health, reason for school choice and study time.
 
-Now we plot ROC curve for random forest with default $mtry$ and with $mtry=p$ which is equivalent to bagging method. 
+Now we plot the ROC curve for random forest with default $mtry$ and with $mtry=p$ which is equivalent to bagging method. 
 
 ```{r }
-# Plot for RF
-par(mfrow = c(1, 2))
-plot(perf, main = "Random Forest, m = 4", colorize = TRUE) 
-
 # TODO: make sure if m = 23
 # TODO: what about OOB?
-
-
-### Bagging:
 BaggingResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 23, ntree = 500)
 bagg.probs = predict(BaggingResult, dataRF_test, type = "prob")[, 2]
 predob.bagg = prediction(bagg.probs, dataRF_test$studentPerformance)
-perf = performance(predob.bagg, "tpr", "fpr")
-plot(perf, main = "Bagging, m = 23", colorize = TRUE)
-par(mfrow = c(1, 1))
+perf.bagg = performance(predob.bagg, "tpr", "fpr")
+
+par(mfrow = c(1, 2))
+plot(perf, main = "Random Forest, m = 4", colorize = TRUE) 
+plot(perf.bagg, main = "Bagging, m = 23", colorize = TRUE)
 ```
--
+
+
+```{r echo=F, message=F}
+par(mfrow = c(1, 1)) # fix the plot for later usage
+```
+
 Let's now compare averaged accouracy (measured by AUC) for default random forest and bagging method. Both errors were estimated by test data, and not by OOB error. 
 
 ```{r }
 auc_value20 = 0.0
 repeat_each = 20
+
 for (i in 1:repeat_each) {
-  
   labelsRF = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
   dataRF_train = dataRF[labelsRF,]
   dataRF_test = dataRF[!labelsRF,]
@@ -330,23 +331,19 @@ for (i in 1:repeat_each) {
   auc_value <- as.numeric(performance(predob.bagg, "auc")@y.values)
   auc_value20 = auc_value20 + auc_value
 }
-mean_auc.bagging = auc_value20 / repeat_each
 
-cat("RandomForest (m = 4): ", mean_auc)
-cat("\n")
-cat("Bagging      (m = 23): ", as.numeric(performance(predob.bagg, "auc")@y.values))
- 
+cat("RandomForest (m = 4): ", auc_value20 / repeat_each, 
+    "\nBagging      (m = 23): ", as.numeric(performance(predob.bagg, "auc")@y.values))
 ```
 
 For random forest ($m = 4$) AUC curve is equal to $0.8011636$.
+
 For bagging ($m = 23$) AUC curve is equal to $0.7941455$. 
  
 By applying bagging method we see a slight degradation of model accuracy.
- 
- 
+
 ### Boosting
 ```{r }
-set.seed(1)
 dataBoosting <- subset(data, select = -c(G3))
 dataBoosting$studentPerformance <- as.integer(dataBoosting$studentPerformance) 
 
