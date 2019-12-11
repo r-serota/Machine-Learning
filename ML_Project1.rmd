@@ -262,11 +262,11 @@ The error rate of SVM classifier is equal to $0.2692308$.
 
 ## Random Forests and Bagging
 
-This chapter concentrates on predicting the students' perfomance using Random Forests and Bagging.  
+This chapter concentrates on predicting the student perfomance using Random Forests and Bagging.  
 At the beginning, we checked wheter the default value for tuning parameter of Random Forests (500 decision trees in a model) is proper for our dataset. 
-Later, we compare performance of Random Forests and Bagging method by measuring averaged AUC of models. Moreover, we created Importance Plots for applied algorithms.
+Later, we compared performance of Random Forests and Bagging method by measuring averaged AUC of models. Moreover, we created Importance Plots for applied algorithms.
 
-
+In order to check the tuning parameter we plottedthe OOB error.
 ```{r}
 dataRF <- subset(data, select = -c(G3))
 
@@ -277,10 +277,9 @@ dataRF_train = dataRF[labelsRF,]
 checking = randomForest(studentPerformance ~ ., data = dataRF_train)
 plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate")  
 ```
+The OOB error rate decreases significantly to around 50 trees. For a larger number of trees the difference of the OOB error is slight. Therefore we conclude that $B=500$ is sufficient for our dataset.
 
-The OOB error rate decreases significantly to around 50 trees. For a larger number of trees the difference of the OOB error is slight. Therefore we conclude that $B=500$ is sufficient.
-
-After that, we built multiple models of Random Forests, tested its accuracy and averaged the results for obtaining a better estimation. Accuracy of model was measured by AUC (Area Under the Curve). While applying Random Forest we used default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification).
+We built multiple models of Random Forests, tested its accuracy and averaged the results for obtaining a better estimation. Accuracy of model was measured by AUC (Area Under the Curve). While applying Random Forest we used default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification).
 ```{r}
 auc_value20 = 0.0
 repeat_each = 20
@@ -301,21 +300,17 @@ for (i in 1:repeat_each) {
 }
 auc_value20 / repeat_each # mean auc
 ```
-
 The accuracy of Classification Random Forest measured by AUC is equal to $0.8011636$. 
 
-Let us check importance of each variable with respect to predicting studentPerformance.
-
+Let us check importance of each variable with respect to predict studentPerformance.
 ```{r }
 rf = randomForest(studentPerformance ~ ., data = dataRF_train)
 varImpPlot(rf) # plot importance
 ```
-
-The importance of variables was measured for each tree by the improvement in the split-criterion. As a measure of improvement in split-criterion, Gini Index was served.   
+The importance of variables was measured for each tree by the improvement in the split-criterion. As a metric of improvement in split-criterion, Gini Index was served.   
 On the above plot we can see that the most important predictors of students success are: number of their absences, mother education, measure of health, reason for school choice and study time.
 
-Below, we plotted the ROC curve for Random Forest with default $mtry$ and with $mtry=p$ which is equivalent to bagging method. 
-
+Below, we plotted the ROC curve for Random Forest with default $mtry$ and with $mtry=p$ which is equivalent to Bagging method. 
 ```{r }
 # TODO: make sure if m = 23
 # TODO: what about OOB?
@@ -329,13 +324,11 @@ plot(perf, main = "Random Forest, m = 4", colorize = TRUE)
 plot(perf.bagg, main = "Bagging, m = 23", colorize = TRUE)
 ```
 
-
 ```{r echo=F, message=F}
 par(mfrow = c(1, 1)) # fix the plot for later usage
 ```
 
-Let's now compare averaged accouracy (measured by AUC) for default random forest and bagging method. Both errors were estimated by test data, and not by OOB error. 
-
+Let's now compare averaged accuracy (measured by AUC) for default Random Forest and Bagging method. Both errors were estimated on the test data.
 ```{r }
 auc_value20 = 0.0
 repeat_each = 20
@@ -357,18 +350,16 @@ cat("RandomForest (m = 4): ", auc_value20 / repeat_each,
     "\nBagging      (m = 23): ", as.numeric(performance(predob.bagg, "auc")@y.values))
 ```
 
-For random forest ($m = 4$) AUC curve is equal to $0.8011636$.
+For Random Forest ($m = 4$) AUC curve is equal to $0.8011636$.
+For Bagging ($m = 23$) AUC curve is equal to $0.7941455$. 
+By applying Bagging method we see a slight deterioration of the model accuracy.
 
-For bagging ($m = 23$) AUC curve is equal to $0.7941455$. 
- 
-By applying bagging method we see a slight degradation of model accuracy.
 
 ### Boosting
 
-This chapter focuses on prediction the student performance by using Boosting methos.
+This chapter focuses on prediction the student performance by using Boosting method.
 
-At the beginning, we used Cross-Validation which enabled us to pick a proper number of trees equal to ???. According to this value, we built a Boosting model, plotted the ROC curve, calucalted the AUC and showed which variables were considered as the most important.
-
+At the beginning, we used Cross-Validation which enabled us to pick a proper number of trees equal to ???. According to this value, we built a Boosting model, plotted the ROC curve, calucalted the AUC and presented which variables were considered as the most important.
 
 ```{r }
 dataBoosting <- subset(data, select = -c(G3))
@@ -393,16 +384,16 @@ predob = prediction(boost.probs, dataBoosting_test$studentPerformance)
 perf = performance(predob, "tpr", "fpr")
 plot(perf, main = "Boosting with B = 760", colorize = TRUE) #TODO: B
 as.numeric(performance(predob, "auc")@y.values)
-
+```
+For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
+```{r }
 # Variable importance plot
 summary(boostingBest)
 
 #TODO: how to pick shrinkage, d, distribution
 #TODO: print all valus on y axis on "Relative influence" plot
-
 ```
 
-For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
 According to the obtained results of Boosting, the most relative predictor is 'number of failures'. A the next important variables the Boosting Algorithm indicated 'mother education', 'number of absences', 'reason to choose particular school'.
 
 
