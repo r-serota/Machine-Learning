@@ -248,11 +248,6 @@ SVM is not a probability classifier. The result of its prediction is simply a bi
 # confusion matrix on the test set
 table(true = dataSVM_test.response,  pred = predict(svmfit.opt, dataSVM_test))
 SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.response)) # error rate
-
-# TODO: in our dataset Number of Support Vectors is very large. How should we pick C to change it?
-# TODO: how to pick kernel, cost, gamma
-# TODO: parameter tuning with library(kernlab)
-# TODO: probably because our dataset contains a lot of categorical variables, SVM method behavies very poorly. We need to verify it, and write about it in out report
 ```
 The error rate of SVM classifier is equal to $0.2692308$.
 
@@ -312,8 +307,6 @@ On the above plot we can see that the most important predictors of students succ
 
 Below, we plotted the ROC curve for Random Forest with default $mtry$ and with $mtry=p$ which is equivalent to Bagging method. 
 ```{r }
-# TODO: make sure if m = 23
-# TODO: what about OOB?
 BaggingResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 23, ntree = 500)
 bagg.probs = predict(BaggingResult, dataRF_test, type = "prob")[, 2]
 predob.bagg = prediction(bagg.probs, dataRF_test$studentPerformance)
@@ -382,16 +375,13 @@ boostingBest = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distri
 boost.probs = predict(boostingBest, dataBoosting_test, n.trees = best.iter, type = "response")
 predob = prediction(boost.probs, dataBoosting_test$studentPerformance)
 perf = performance(predob, "tpr", "fpr")
-plot(perf, main = "Boosting with B = 760", colorize = TRUE) #TODO: B
+plot(perf, main = "Boosting with B = 760", colorize = TRUE) 
 as.numeric(performance(predob, "auc")@y.values)
 ```
 For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
 ```{r }
 # Variable importance plot
 summary(boostingBest)
-
-#TODO: how to pick shrinkage, d, distribution
-#TODO: print all valus on y axis on "Relative influence" plot
 ```
 
 According to the obtained results of Boosting, the most relative predictor is 'number of failures'. A the next important variables the Boosting Algorithm indicated 'mother education', 'number of absences', 'reason to choose particular school'.
