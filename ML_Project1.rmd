@@ -145,11 +145,15 @@ As shown in the figure above, the proportion of passed and failed exams is nearl
 
 ## Logistic regression
 
+```{r echo=F, warning=F, message=F}
+set.seed(10)
+```
+
 In this chapter, some results concerning Logistic regression were presented.  
 
 We implemented the Logistic Regression model and compared its result for training and test set. What is more, we calculated the Confusion Matrix (for threashold equal to $0.5$). In order to check the model's performance, we compared the obtained success rate of the test set with the base model which was built by a random guessing.
 
-
+We begin by preparing data.
 ```{r fig.align="center", fig.width = 4, fig.height = 5 }
 dataLogit <- subset(data, select = -c(G3))
 
@@ -158,7 +162,6 @@ labelsLogit = sample.split(dataLogit$studentPerformance, SplitRatio = 4/5)
 
 dataLogit_train = dataLogit[labelsLogit, ]
 dataLogit_test = dataLogit[!labelsLogit, ]
-
 ```
 
 
@@ -168,13 +171,10 @@ dataLogit_trainMean <- mean(as.numeric(dataLogit_train$studentPerformance)-1)
 dataLogit_testMean <- mean(as.numeric(dataLogit_test$studentPerformance)-1)
 ```
 
+We use logistic regression and calculate its error rate on a train data.
 ```{r }
 # fit the logistic regression model on the training sample only
 glm.fit = glm(studentPerformance ~ ., data = dataLogit_train, family = binomial)
-# predicted probabilities on the test sample 
-glm.probs = predict(glm.fit, newdata = dataLogit_test, type = "response") 
-# predicted signs on the test set (for threshold equal to 0.5)
-glm.pred = ifelse(glm.probs > 0.5, 1, 0)
 
 # Confusion matrix and SuccessRate on training set
 glm.probs_train = predict(glm.fit, newdata = dataLogit_train, type = "response") 
@@ -184,24 +184,34 @@ dataLogit_train$studentPerformance <- ifelse(dataLogit_train$studentPerformance=
 LogitSuccessRate_train <- mean(glm.pred_train == dataLogit_train$studentPerformance)
 LogitSuccessRate_train
 ```
-On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting, it is better to compare algorithms' scores on the test set.
+On the training data, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting, it is better to compare algorithms' scores on the test set.
+
 ```{r }
+# predicted probabilities on the test sample 
+glm.probs = predict(glm.fit, newdata = dataLogit_test, type = "response") 
+# predicted signs on the test set (for threshold equal to 0.5)
+glm.pred = ifelse(glm.probs > 0.5, 1, 0)
+
 # Confusion matrix on the test set
 LogitConfMat <- table(true = dataLogit_test$studentPerformance, predict = glm.pred)
 LogitConfMat
 ```
-Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance.
+Taking into account the test set, the model predicted correctly 36 students with Bad Performance and 63 students with Good Performance.
 ```{r }
 # test sample total success rate
 dataLogit_test$studentPerformance <- ifelse(dataLogit_test$studentPerformance=="Good",1,0)
 mean(glm.pred == dataLogit_test$studentPerformance) # logistic regression success rate
 ```
-It results in the correct prediction at the level of 75.19%.
+It results in the correct prediction at the level of 76.15%.
+
+In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing.
 ```{r }
 # total test set success rate of the baseline model (with prediction 1 for every observation)
-Basemodel <- mean(1 == dataLogit_test$studentPerformance)
+mean(1 == dataLogit_test$studentPerformance)
 ```
-In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing. Its success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
+The random guessing models success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
+
+Next, we visualize predictors accuracy relative to the threshold, using ROC curve.
 ```{r fig.width=4, fig.height=4, fig.align="center"}
 # test set ROC curve and AUC
 predob = prediction(glm.probs, dataLogit_test$studentPerformance)
@@ -216,6 +226,10 @@ The AUC for the logistic regression amounts to 78.86%.
 
 
 ## Support Vector Machines
+
+```{r echo=F, warning=F, message=F}
+set.seed(20)
+```
 
 In this chapter we use SVM for predicting if student will pass the final exam.  
 Firstly, we used 10-CV to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel the "radial" function was used.
@@ -253,9 +267,21 @@ The error rate of SVM classifier is equal to $0.2692308$.
 
 ## K-Nearest Neigbours
 
+```{r echo=F, warning=F, message=F}
+set.seed(30)
+```
+
 ## Linear Discriminant Analysis
 
+```{r echo=F, warning=F, message=F}
+set.seed(40)
+```
+
 ## Random Forests and Bagging
+
+```{r echo=F, warning=F, message=F}
+set.seed(50)
+```
 
 This chapter concentrates on predicting the student perfomance using Random Forests and Bagging.  
 At the beginning, we checked wheter the default value for tuning parameter of Random Forests (500 decision trees in a model) is proper for our dataset. 
@@ -324,6 +350,7 @@ As can be seen on the above plot, the ROC curve for the Random Forest indicated 
 par(mfrow = c(1, 1)) # fix the plot for later usage
 ```
 
+Let us now compare averaged accuracy (measured by AUC) for default Random Forest and Bagging method. Both errors were estimated on the test data.
 ```{r }
 auc_value20 = 0.0
 repeat_each = 20
@@ -354,9 +381,9 @@ By applying Bagging method we see a slight deterioration of the model accuracy.
 
 This chapter focuses on prediction the student performance by using Boosting method.
 
-At the beginning, we used Cross-Validation which enabled us to pick a proper number of trees equal to ???. According to this value, we built a Boosting model, plotted the ROC curve, calucalted the AUC and presented which variables were considered as the most important.
+At the beginning, we used Cross-Validation which enabled us to pick a proper number of trees equal to 760. According to this value, we built a Boosting model, plotted the ROC curve, calucalted the AUC and presented which variables were considered as the most important.
 
-```{r }
+```{r fig.width=4, fig.height=5, fig.align="center"}
 dataBoosting <- subset(data, select = -c(G3))
 dataBoosting$studentPerformance <- as.integer(dataBoosting$studentPerformance) 
 
@@ -377,10 +404,14 @@ boostingBest = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distri
 boost.probs = predict(boostingBest, dataBoosting_test, n.trees = best.iter, type = "response")
 predob = prediction(boost.probs, dataBoosting_test$studentPerformance)
 perf = performance(predob, "tpr", "fpr")
-plot(perf, main = "Boosting with B = 760", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
+plot(perf, main = "Boosting with B = 936", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7)) 
 as.numeric(performance(predob, "auc")@y.values)
 ```
-For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
+For Boosting method (with $B = 936$) the AUC metric is equal to $0.7869048$.
+```{r echo=F}
+boostingBest
+```
+
 ```{r }
 # Variable importance plot
 summary(boostingBest)
