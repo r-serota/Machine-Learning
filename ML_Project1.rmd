@@ -151,9 +151,9 @@ set.seed(10)
 
 In this chapter, some results concerning Logistic regression were presented.  
 
-We implemented the Logistic Regression model and compared its result for training and test set. What is more, we calculated the Confusion Matrix (for threashold equal to $0.5$). In order to check the model's performance, we compared the obtained success rate of the test set with the base model which was built by a random guessing.
+We implemented the Logistic Regression model and compared its result for training and test set. What is more, we calculated the Confusion Matrix (for threashold equal to $0.5$). In order to check the model performance, we compared the obtained success rate of the test set with the base model which was built by a random guessing.
 
-We begin by preparing data.
+We started with preparing the dataset.
 ```{r fig.align="center", fig.width = 4, fig.height = 5 }
 dataLogit <- subset(data, select = -c(G3))
 
@@ -171,7 +171,7 @@ dataLogit_trainMean <- mean(as.numeric(dataLogit_train$studentPerformance)-1)
 dataLogit_testMean <- mean(as.numeric(dataLogit_test$studentPerformance)-1)
 ```
 
-We use logistic regression and calculate its error rate on a train data.
+After that, we applied the Logistic Regression method and calculated the success rate on the train data.
 ```{r }
 # fit the logistic regression model on the training sample only
 glm.fit = glm(studentPerformance ~ ., data = dataLogit_train, family = binomial)
@@ -184,7 +184,7 @@ dataLogit_train$studentPerformance <- ifelse(dataLogit_train$studentPerformance=
 LogitSuccessRate_train <- mean(glm.pred_train == dataLogit_train$studentPerformance)
 LogitSuccessRate_train
 ```
-On the training data, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting, it is better to compare algorithms' scores on the test set.
+On the training data, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting, it is better to compare algorithm scores on the test set.
 
 ```{r }
 # predicted probabilities on the test sample 
@@ -204,24 +204,27 @@ mean(glm.pred == dataLogit_test$studentPerformance) # logistic regression succes
 ```
 It results in the correct prediction at the level of 76.15%.
 
-In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing.
+In order to determine if the obtained statistics is good or not, we compared the obtained result with the base model which is a reflection of a random guessing.
 ```{r }
 # total test set success rate of the baseline model (with prediction 1 for every observation)
 mean(1 == dataLogit_test$studentPerformance)
 ```
-The random guessing models success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
+The random guessing models success rate is equal to 69,77%. It follows that the logistic regression model gave us an improvement of the success rate at the level of 5.4 percentage points.
 
-Next, we visualize predictors accuracy relative to the threshold, using ROC curve.
+Next, we visualized the predictor accuracy using the ROC curve.
 ```{r fig.width=4, fig.height=4, fig.align="center"}
 # test set ROC curve and AUC
 predob = prediction(glm.probs, dataLogit_test$studentPerformance)
 perf = performance(predob, "tpr", "fpr")
 plot(perf, main = "Logistic Regression", colorize = TRUE, 
      print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
+```
+
+As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.7 - 1.
+```{r }
 as.numeric(performance(predob, "auc")@y.values) # Logistic regression AUC score
 ```
-As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.0 - 0.7. 
-...
+ 
 The AUC for the logistic regression amounts to 78.86%.
 
 
@@ -231,10 +234,11 @@ The AUC for the logistic regression amounts to 78.86%.
 set.seed(20)
 ```
 
-In this chapter we use SVM for predicting if student will pass the final exam.  
+In this chapter we used SVM for predicting if a student will pass the final exam.  
 Firstly, we used 10-CV to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel the "radial" function was used.
-After picking the best tuning parameters, we built the model with them and measured the performance of SVM algorithm.
+After picking the best tuning parameters, we built a model with them and measured the performance of SVM algorithm.  
 
+We started with preparing the dataset.
 ```{r }
 
 dataSVM <- subset(data, select = -c(G3))
@@ -245,12 +249,16 @@ dataSVM_train = dataSVM[train, ]
 dataSVM_test = dataSVM[-train, ]
 
 dataSVM_test.response <- dataSVM_test$studentPerformance
-
+```
+As the next step we picked the tuning parameters $\gamma$ and $\lambda$. 
+```{r }
 ### 10-CV using `tune()`
 # cross-validating the tuning parameters gamma and lambda for the radial SVM om training data
 tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM_train, kernel = "radial",
                 ranges = list(cost = c(1e-10, 1e-5, 0.1 ,1 ,10 ,100 ,1000), gamma = c(0.5, 1, 2, 3, 4)))
-
+```
+With selected parameters we built a SVM model.
+```{r }
 # retrieve the best model
 svmfit.opt = tune.out$best.model
 summary(svmfit.opt)
@@ -287,7 +295,7 @@ This chapter concentrates on predicting the student perfomance using Random Fore
 At the beginning, we checked wheter the default value for tuning parameter of Random Forests (500 decision trees in a model) is proper for our dataset. 
 Later, we compared performance of Random Forests and Bagging method by measuring averaged AUC of models. Moreover, we created Importance Plots for applied algorithms.
 
-In order to check the tuning parameter we plottedthe OOB error.
+In order to check the tuning parameter we plotted the OOB error.
 ```{r}
 dataRF <- subset(data, select = -c(G3))
 
@@ -301,9 +309,9 @@ plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate")
 
 The OOB error rate decreases significantly to around 50 trees. For a larger number of trees the difference of the OOB error is slight. Therefore we conclude that $B=500$ is sufficient for our dataset.
 
-We built multiple models of Random Forests, tested its accuracy and averaged the results for obtaining a better estimation. Accuracy of model was measured by AUC (Area Under the Curve). While applying Random Forest we used default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification).
+We built multiple models of Random Forests and Bagging, tested their accuracy and averaged the results for obtaining a better estimation. Accuracy of model was measured by AUC (Area Under the Curve). While applying Random Forest we used default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification).
 ```{r}
-auc_value20 = 0.0
+auc_value20_RF = 0.0
 repeat_each = 20
 for (i in 1:repeat_each) {
   
@@ -318,20 +326,44 @@ for (i in 1:repeat_each) {
   perf = performance(predob.rf, "tpr", "fpr")
   
   auc_value <- as.numeric(performance(predob.rf, "auc")@y.values)
-  auc_value20 = auc_value20 + auc_value
+  auc_value20_RF = auc_value20_RF + auc_value
 }
-auc_value20 / repeat_each # mean auc
 ```
-The accuracy of Classification Random Forest measured by AUC is equal to $0.8011636$. 
-
-Let us check importance of each variable with respect to predict studentPerformance.
 ```{r }
-rf = randomForest(studentPerformance ~ ., data = dataRF_train)
-varImpPlot(rf) # plot importance
+auc_value20_B = 0.0
+repeat_each = 20
+
+for (i in 1:repeat_each) {
+  labelsB = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
+  dataB_train = dataRF[labelsB,]
+  dataB_test = dataRF[!labelsB,]
+ 
+  BaggingResult = randomForest(studentPerformance ~ ., data = dataB_train, mtry = 23, ntree = 500)
+  bagg.probs = predict(BaggingResult, dataB_test, type = "prob")[, 2]
+  predob.bagg = prediction(bagg.probs, dataB_test$studentPerformance)
+  
+  auc_value <- as.numeric(performance(predob.bagg, "auc")@y.values)
+  auc_value20_B = auc_value20_B + auc_value
+}
+
+cat("RandomForest (m = 4): ", auc_value20_RF / repeat_each, 
+    "\nBagging      (m = 23): ", auc_value20_B / repeat_each)
+```
+For Random Forest ($m = 4$) AUC is equal to $0.8011636$.
+For Bagging ($m = 23$) AUC  amounts to $0.7941455$. 
+By applying Bagging method we see a slight deterioration of the model accuracy.
+
+Let us check importance of used variables with respect to predicted student performance.
+```{r }
+par(mfrow = c(1, 2))
+RandomForest_VI = randomForest(studentPerformance ~ ., data = dataRF_train)
+varImpPlot(RandomForest_VI) # plot importance for RF
+Bagging_VI = randomForest(studentPerformance ~ ., data = dataB_train, mtry = 23, ntree = 500)
+varImpPlot(Bagging_VI) # plot importance for B
 ```
 
 The importance of variables was measured for each tree by the improvement in the split-criterion. As a metric of improvement in split-criterion, Gini Index was served.   
-On the above plot we can see that the most important predictors of students success are: number of their absences, mother education, measure of health, reason for school choice and study time.
+On the above plot we can see that both methods indicated 'number of past class failures ', 'father education', 'number of absences', and 'age' as the most important predictors of student performance.
 
 Below, we plotted the ROC curve for Random Forest with default $mtry$ and with $mtry=p$ which is equivalent to Bagging method. 
 ```{r }
@@ -350,40 +382,15 @@ As can be seen on the above plot, the ROC curve for the Random Forest indicated 
 par(mfrow = c(1, 1)) # fix the plot for later usage
 ```
 
-Let us now compare averaged accuracy (measured by AUC) for default Random Forest and Bagging method. Both errors were estimated on the test data.
-```{r }
-auc_value20 = 0.0
-repeat_each = 20
-
-for (i in 1:repeat_each) {
-  labelsRF = sample.split(dataRF$studentPerformance, SplitRatio = 4/5)
-  dataRF_train = dataRF[labelsRF,]
-  dataRF_test = dataRF[!labelsRF,]
- 
-  BaggingResult = randomForest(studentPerformance ~ ., data = dataRF_train, mtry = 23, ntree = 500)
-  bagg.probs = predict(BaggingResult, dataRF_test, type = "prob")[, 2]
-  predob.bagg = prediction(bagg.probs, dataRF_test$studentPerformance)
-  
-  auc_value <- as.numeric(performance(predob.bagg, "auc")@y.values)
-  auc_value20 = auc_value20 + auc_value
-}
-
-cat("RandomForest (m = 4): ", auc_value20 / repeat_each, 
-    "\nBagging      (m = 23): ", as.numeric(performance(predob.bagg, "auc")@y.values))
-```
-
-For Random Forest ($m = 4$) AUC curve is equal to $0.8011636$.
-For Bagging ($m = 23$) AUC curve is equal to $0.7941455$. 
-By applying Bagging method we see a slight deterioration of the model accuracy.
-
 
 ### Boosting
 
 This chapter focuses on prediction the student performance by using Boosting method.
 
-At the beginning, we used Cross-Validation which enabled us to pick a proper number of trees equal to 760. According to this value, we built a Boosting model, plotted the ROC curve, calucalted the AUC and presented which variables were considered as the most important.
+At the beginning, we used Cross-Validation which enabled us to pick a proper number of trees equal to 936 According to this value, we built a Boosting model, plotted the ROC curve, calucated the AUC and presented which variables were considered as the most important.
 
-```{r fig.width=4, fig.height=5, fig.align="center"}
+We started with preparing the dataset.
+```{r }
 dataBoosting <- subset(data, select = -c(G3))
 dataBoosting$studentPerformance <- as.integer(dataBoosting$studentPerformance) 
 
@@ -391,14 +398,19 @@ labelsBoosting = sample.split(dataBoosting$studentPerformance, SplitRatio = 4/5)
 dataBoosting_train = dataBoosting[labelsBoosting,]
 dataBoosting_test = dataBoosting[!labelsBoosting,]
 
+```
+In order to find a proper number of trees we used CV.
+```{r fig.width=4, fig.height=5, fig.align="center"}
 # We use CV to pick the number of trees.
 boostingCV = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', n.trees = 10000, 
                  shrinkage = 0.01, cv.folds = 10)
 # Bernoulli requires the response to be in {0,1}. That's why we use (studentPerformance-1)
 best.iter = gbm.perf(boostingCV, method = "cv", plot.it = F)# Check the best iteration
+```
+With selected number of trees we built the Bagging model, calculated the AUC as well as plotted the ROC curve.
+```{r fig.width=4, fig.height=5, fig.align="center"}
 # We fit the optimal boosted tree.
-boostingBest = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', 
-                   n.trees = best.iter, shrinkage = 0.01)
+boostingBest = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distribution = 'bernoulli', n.trees = best.iter, shrinkage = 0.01)
 
 # test set ROC curve and the AUC for the best boosted tree.
 boost.probs = predict(boostingBest, dataBoosting_test, n.trees = best.iter, type = "response")
@@ -407,17 +419,18 @@ perf = performance(predob, "tpr", "fpr")
 plot(perf, main = "Boosting with B = 936", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7)) 
 as.numeric(performance(predob, "auc")@y.values)
 ```
-For Boosting method (with $B = 936$) the AUC metric is equal to $0.7869048$.
+For Boosting method (with $B = 936$) the AUC metric is equal to $0.7869048$.  
+
+Moreover, we checked which variables were the most important, according to the Boosting model.
 ```{r echo=F}
 boostingBest
 ```
-
 ```{r }
 # Variable importance plot
 summary(boostingBest)
 ```
 
-According to the obtained results of Boosting, the most relative predictor is 'number of failures'. A the next important variables the Boosting Algorithm indicated 'mother education', 'number of absences', 'reason to choose particular school'.
+According to the obtained results of Boosting, the most relative predictor is 'number of failures'. The Boosting Algorithm indicated 'mother education', 'number of absences', 'reason to choose particular school' as the next important variables.
 
 
 ## Classification summary
