@@ -3,11 +3,7 @@ title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-    fig_caption: true
+  html_document
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -150,12 +146,9 @@ As shown in the figure above, the proportion of passed and failed exams is nearl
 ## Logistic regression
 
 In this chapter, some results concerning Logistic regression were presented.  
-On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting, it is better to compare algorithms' scores on the test set. Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance. It results in the correct prediction at the level of 75.19%.
-In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing. Its success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
- 
-As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.0 - 0.7. 
-...
-The AUC for the logistic regression amounts to 78.86%.
+
+We implemented the Logistic Regression model and compared its result for training and test set. What is more, we calculated the Confusion Matrix. In order to check the model's performance, we compared the obtained success rate of the test set with the base model which was built by a random guessing.
+
 
 ```{r fig.align="center", fig.width = 4, fig.height = 5 }
 dataLogit <- subset(data, select = -c(G3))
@@ -175,37 +168,13 @@ dataLogit_trainMean <- mean(as.numeric(dataLogit_train$studentPerformance)-1)
 dataLogit_testMean <- mean(as.numeric(dataLogit_test$studentPerformance)-1)
 ```
 
-We calculate confusion matrix for threshold equal to $0.5$.
 ```{r }
 # fit the logistic regression model on the training sample only
 glm.fit = glm(studentPerformance ~ ., data = dataLogit_train, family = binomial)
-
 # predicted probabilities on the test sample 
 glm.probs = predict(glm.fit, newdata = dataLogit_test, type = "response") 
-
-# predicted signs on the test set
+# predicted signs on the test set (for threshold equal to 0.5)
 glm.pred = ifelse(glm.probs > 0.5, 1, 0)
-
-# test sample confusion matrix
-LogitConfMat <- table(true = dataLogit_test$studentPerformance, predict = glm.pred)
-LogitConfMat
-```
-
-
-```{r }
-# test sample total success rate
-dataLogit_test$studentPerformance <- ifelse(dataLogit_test$studentPerformance=="Good",1,0)
-LogitSuccessRate <- mean(glm.pred == dataLogit_test$studentPerformance)
-LogitSuccessRate
-
-# test set ROC curve and AUC
-predob = prediction(glm.probs, dataLogit_test$studentPerformance)
-perf = performance(predob, "tpr", "fpr")
-plot(perf, main = "Logistic Regression", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
-LogitAUC <- as.numeric(performance(predob, "auc")@y.values)
-
-# total test set success rate of the baseline model (with prediction 1 for every observation)
-Basemodel <- mean(1 == dataLogit_test$studentPerformance)
 
 # Confusion matrix and SuccessRate on training set
 glm.probs_train = predict(glm.fit, newdata = dataLogit_train, type = "response") 
@@ -215,16 +184,42 @@ dataLogit_train$studentPerformance <- ifelse(dataLogit_train$studentPerformance=
 LogitSuccessRate_train <- mean(glm.pred_train == dataLogit_train$studentPerformance)
 LogitSuccessRate_train
 ```
+On the training test, the Logistic regression model achieved the success rate equal to 81.92%. However, because of frequent occurance of overfitting, it is better to compare algorithms' scores on the test set.
+```{r }
+# Confusion matrix on the test set
+LogitConfMat <- table(true = dataLogit_test$studentPerformance, predict = glm.pred)
+LogitConfMat
+```
+Taking into account the test set, the model predicted correctly 17 students with Bad Performance and 80 students with Good Performance.
+```{r }
+# test sample total success rate
+dataLogit_test$studentPerformance <- ifelse(dataLogit_test$studentPerformance=="Good",1,0)
+LogitSuccessRate <- mean(glm.pred == dataLogit_test$studentPerformance)
+LogitSuccessRate
+```
+It results in the correct prediction at the level of 75.19%.
+```{r }
+# total test set success rate of the baseline model (with prediction 1 for every observation)
+Basemodel <- mean(1 == dataLogit_test$studentPerformance)
+```
+In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing. Its success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
+```{r }
+# test set ROC curve and AUC
+predob = prediction(glm.probs, dataLogit_test$studentPerformance)
+perf = performance(predob, "tpr", "fpr")
+plot(perf, main = "Logistic Regression", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
+LogitAUC <- as.numeric(performance(predob, "auc")@y.values)
+```
+As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.0 - 0.7. 
+...
+The AUC for the logistic regression amounts to 78.86%.
+
 
 ## Support Vector Machines
 
-In this chapter we use SVM for predicting if student will pass the final exam. 10-CV was used to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel the "radial" function was used.
-
-
-After assesing tuning parameters we measure the performance of SVM algorithm with the computed parameters.
-
-
-SVM is not a probability classifier. The result of its prediction is simply a binary response. Therefore we cannot use ROC curve and AUC metric to measure its accuracy and compare it to other classification algorithms. That is why we used an accuracy metric error rate to check the SVM performance. What is more, we calculated also the confusion matrix.
+In this chapter we use SVM for predicting if student will pass the final exam.  
+Firstly, we used 10-CV to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel the "radial" function was used.
+After picking the best tuning parameters, we built the model with them and  measure the performance of SVM algorithm.
 
 ```{r }
 
@@ -245,21 +240,20 @@ tune.out = tune(svm, factor(studentPerformance) ~ ., data = dataSVM_train, kerne
 # retrieve the best model
 svmfit.opt = tune.out$best.model
 summary(svmfit.opt)
+```
+As we can see in the results, the number of Support Vectors in our experiment is equal to 519 (much more than the $p=23$). We assume a reason for such a large number can be the fact that the major part of predictors in our dataset are factorial and many of them are also binary.  
 
+SVM is not a probability classifier. The result of its prediction is simply a binary response. Therefore we cannot use ROC curve and AUC metric to measure its accuracy and compare it to other classification algorithms. That is why we used an accuracy metric error rate to check the SVM performance. What is more, we calculated also the confusion matrix. 
+```{r }
 # confusion matrix on the test set
 table(true = dataSVM_test.response,  pred = predict(svmfit.opt, dataSVM_test))
-
 SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.response)) # error rate
 
 # TODO: in our dataset Number of Support Vectors is very large. How should we pick C to change it?
 # TODO: how to pick kernel, cost, gamma
 # TODO: parameter tuning with library(kernlab)
 # TODO: probably because our dataset contains a lot of categorical variables, SVM method behavies very poorly. We need to verify it, and write about it in out report
-
 ```
-
-As we can see in the results, the number of Support Vectors in our experiment is equal to 519 (much more than the $p=23$). We assume a reason for such a high value can be the fact that the major part of predictors in our dataset are factorial and many of them are also binary. 
-
 The error rate of SVM classifier is equal to $0.2692308$.
 
 ## K-Nearest Neigbours
