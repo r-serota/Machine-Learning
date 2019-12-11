@@ -3,7 +3,11 @@ title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
 output:
-  html_document
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -147,7 +151,7 @@ As shown in the figure above, the proportion of passed and failed exams is nearl
 
 In this chapter, some results concerning Logistic regression were presented.  
 
-We implemented the Logistic Regression model and compared its result for training and test set. What is more, we calculated the Confusion Matrix. In order to check the model's performance, we compared the obtained success rate of the test set with the base model which was built by a random guessing.
+We implemented the Logistic Regression model and compared its result for training and test set. What is more, we calculated the Confusion Matrix (for threashold equal to $0.5$). In order to check the model's performance, we compared the obtained success rate of the test set with the base model which was built by a random guessing.
 
 
 ```{r fig.align="center", fig.width = 4, fig.height = 5 }
@@ -194,8 +198,7 @@ Taking into account the test set, the model predicted correctly 17 students with
 ```{r }
 # test sample total success rate
 dataLogit_test$studentPerformance <- ifelse(dataLogit_test$studentPerformance=="Good",1,0)
-LogitSuccessRate <- mean(glm.pred == dataLogit_test$studentPerformance)
-LogitSuccessRate
+mean(glm.pred == dataLogit_test$studentPerformance) # logistic regression success rate
 ```
 It results in the correct prediction at the level of 75.19%.
 ```{r }
@@ -203,12 +206,13 @@ It results in the correct prediction at the level of 75.19%.
 Basemodel <- mean(1 == dataLogit_test$studentPerformance)
 ```
 In order to determine if the obtained statistics is good or not, we compare the obtained result with the base model which is a reflection of a random guessing. Its success rate is equal to 69,77%. It follows that the logistic regression model gives us an improvement of the success rate at the level of 5.4 percentage points.
-```{r }
+```{r fig.width=4, fig.height=4, fig.align="center"}
 # test set ROC curve and AUC
 predob = prediction(glm.probs, dataLogit_test$studentPerformance)
 perf = performance(predob, "tpr", "fpr")
-plot(perf, main = "Logistic Regression", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
-LogitAUC <- as.numeric(performance(predob, "auc")@y.values)
+plot(perf, main = "Logistic Regression", colorize = TRUE, 
+     print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
+as.numeric(performance(predob, "auc")@y.values) # Logistic regression AUC score
 ```
 As can be seen on the ROC curve, there is a large advantage of the true positive rate for a threshold's range of 0.0 - 0.7. 
 ...
@@ -219,7 +223,7 @@ The AUC for the logistic regression amounts to 78.86%.
 
 In this chapter we use SVM for predicting if student will pass the final exam.  
 Firstly, we used 10-CV to find tuning parameters $\gamma$ and $\lambda$ (equal to $1/C$, $C$ is the cost of a violation to the margin). As a kernel the "radial" function was used.
-After picking the best tuning parameters, we built the model with them and  measure the performance of SVM algorithm.
+After picking the best tuning parameters, we built the model with them and measured the performance of SVM algorithm.
 
 ```{r }
 
@@ -247,7 +251,13 @@ SVM is not a probability classifier. The result of its prediction is simply a bi
 ```{r }
 # confusion matrix on the test set
 table(true = dataSVM_test.response,  pred = predict(svmfit.opt, dataSVM_test))
-SVMErrorRate <- (1 - mean(predict(svmfit.opt, dataSVM_test) == dataSVM_test.response)) # error rate
+mean(predict(svmfit.opt, dataSVM_test) != dataSVM_test.response) # error rate
+
+# TODO: in our dataset Number of Support Vectors is very large. How should we pick C to change it?
+# TODO: how to pick kernel, cost, gamma
+# TODO: parameter tuning with library(kernlab)
+# TODO: probably because our dataset contains a lot of categorical variables, SVM method behavies very poorly. We need to verify it, and write about it in out report
+>>>>>>> some summary + changes in logit and svm
 ```
 The error rate of SVM classifier is equal to $0.2692308$.
 
@@ -389,18 +399,23 @@ According to the obtained results of Boosting, the most relative predictor is 'n
 
 ## Classification summary
 
+For the first task, predicting if student will pass the exam, five methods were used: Logistic Regression, KNN, Random Forest, Linear Description Analysis and Support Vector Machines. Every method has been tested on validation test, which was randomly selected in proportion of 20/80(TODO - make sure it's the truth). Also, for method that support variaple importance, this analysis was conducted. Results are presented in a table below.
 
-Random Forest AUC = 0.8011636
-Random Forest importance variables: absences, Medu, health, reason, studytime.
+Algorithm | AUC | Error rate
+------------- | ------------- | ------------- 
+Random forest |0.8011636 | 
+SVM | - | 0.2692308 | 
+Logistic regression | 0.7886 | TODO 
+LDA | TODO | TODO 
+KNN | TODO | TODO 
 
-Boosting AUC = 0.7820606
-Boosting importance variables: failures, Medu,, absences, reason
+Also, random forest resulted in a variable importance summary with respect to predicting if student will pass the exam. Most 5 important variables were: number of absences, mothers education, student health (measured by 1-5 scale), reason to choose particular school, weekly study time.
 
-SVM error rate = 0.2692308
-
-Logistic regression AUC 0.7886
-
-
+<!-- 
+  I didn't conclude boosting results here, cause it's a part of random forest 
+  Boosting AUC = 0.7820606
+  Boosting importance variables: failures, Medu,, absences, reason
+-->
 
 # Regression
 
