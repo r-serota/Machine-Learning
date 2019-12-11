@@ -3,11 +3,7 @@ title: "Final project - Big Data"
 author: "Anna Kołacz, Reneeleonette Serota, Mariusz Zakrzewski, Kamil Stec"
 date: "December 2019"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-    fig_caption: true
+  html_document
 ---
 
 ```{r echo=F, warning=F, message=F}
@@ -252,12 +248,6 @@ SVM is not a probability classifier. The result of its prediction is simply a bi
 # confusion matrix on the test set
 table(true = dataSVM_test.response,  pred = predict(svmfit.opt, dataSVM_test))
 mean(predict(svmfit.opt, dataSVM_test) != dataSVM_test.response) # error rate
-
-# TODO: in our dataset Number of Support Vectors is very large. How should we pick C to change it?
-# TODO: how to pick kernel, cost, gamma
-# TODO: parameter tuning with library(kernlab)
-# TODO: probably because our dataset contains a lot of categorical variables, SVM method behavies very poorly. We need to verify it, and write about it in out report
->>>>>>> some summary + changes in logit and svm
 ```
 The error rate of SVM classifier is equal to $0.2692308$.
 
@@ -282,6 +272,7 @@ dataRF_train = dataRF[labelsRF,]
 checking = randomForest(studentPerformance ~ ., data = dataRF_train)
 plot(checking$err.rate[,1], xlab="Number of trees", ylab="OOB error rate")  
 ```
+
 The OOB error rate decreases significantly to around 50 trees. For a larger number of trees the difference of the OOB error is slight. Therefore we conclude that $B=500$ is sufficient for our dataset.
 
 We built multiple models of Random Forests, tested its accuracy and averaged the results for obtaining a better estimation. Accuracy of model was measured by AUC (Area Under the Curve). While applying Random Forest we used default tuning parameters - $500$ trees and $\lfloor sqrt(p)\rfloor = 4$ (for classification).
@@ -312,6 +303,7 @@ Let us check importance of each variable with respect to predict studentPerforma
 rf = randomForest(studentPerformance ~ ., data = dataRF_train)
 varImpPlot(rf) # plot importance
 ```
+
 The importance of variables was measured for each tree by the improvement in the split-criterion. As a metric of improvement in split-criterion, Gini Index was served.   
 On the above plot we can see that the most important predictors of students success are: number of their absences, mother education, measure of health, reason for school choice and study time.
 
@@ -323,15 +315,15 @@ predob.bagg = prediction(bagg.probs, dataRF_test$studentPerformance)
 perf.bagg = performance(predob.bagg, "tpr", "fpr")
 
 par(mfrow = c(1, 2))
-plot(perf, main = "Random Forest, m = 4", colorize = TRUE) 
-plot(perf.bagg, main = "Bagging, m = 23", colorize = TRUE)
+plot(perf, main = "Random Forest, m = 4", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7)) 
+plot(perf.bagg, main = "Bagging, m = 23", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
 ```
 
+As can be seen on the above plot, the ROC curve for the Random Forest indicated a better accuracy.   Nevertheless, in order to achieve more reliable comparison, we compared averaged accuracy (measured by AUC) for these methods. Both errors were estimated on the test data.
 ```{r echo=F, message=F}
 par(mfrow = c(1, 1)) # fix the plot for later usage
 ```
 
-Let's now compare averaged accuracy (measured by AUC) for default Random Forest and Bagging method. Both errors were estimated on the test data.
 ```{r }
 auc_value20 = 0.0
 repeat_each = 20
@@ -385,7 +377,7 @@ boostingBest = gbm((studentPerformance-1) ~ ., data = dataBoosting_train, distri
 boost.probs = predict(boostingBest, dataBoosting_test, n.trees = best.iter, type = "response")
 predob = prediction(boost.probs, dataBoosting_test$studentPerformance)
 perf = performance(predob, "tpr", "fpr")
-plot(perf, main = "Boosting with B = 760", colorize = TRUE) 
+plot(perf, main = "Boosting with B = 760", colorize = TRUE, print.cutoffs.at = seq(0, 1, by = 0.1), text.adj = c(-0.2, 1.7))
 as.numeric(performance(predob, "auc")@y.values)
 ```
 For Boosting method (with $B = 760$) the AUC metric is equal to $0.7820606$.
@@ -399,23 +391,21 @@ According to the obtained results of Boosting, the most relative predictor is 'n
 
 ## Classification summary
 
-For the first task, predicting if student will pass the exam, five methods were used: Logistic Regression, KNN, Random Forest, Linear Description Analysis and Support Vector Machines. Every method has been tested on validation test, which was randomly selected in proportion of 20/80(TODO - make sure it's the truth). Also, for method that support variaple importance, this analysis was conducted. Results are presented in a table below.
+For the first task, predicting if a student will pass the exam, 6 methods were used: Logistic Regression, KNN, Linear Description Analysis, Support Vector Machines, Random Forest, Bagging and Boosting Every method has been tested on validation test, which was randomly selected in proportion of 80/20. The obtained results are presented in the table below. 
 
 Algorithm | AUC | Error rate
 ------------- | ------------- | ------------- 
-Random forest |0.8011636 | 
-SVM | - | 0.2692308 | 
-Logistic regression | 0.7886 | TODO 
-LDA | TODO | TODO 
+Logistic regression | 0.7886 | TODO
+SVM | - | 0.27 |
 KNN | TODO | TODO 
+LDA | TODO | TODO 
+Random forest | 0.80 | 
+Bagging | TODO | TODO 
+Boosting | 0.78 | TODO 
 
-Also, random forest resulted in a variable importance summary with respect to predicting if student will pass the exam. Most 5 important variables were: number of absences, mothers education, student health (measured by 1-5 scale), reason to choose particular school, weekly study time.
+TODO: opisanie co wygrywa.
 
-<!-- 
-  I didn't conclude boosting results here, cause it's a part of random forest 
-  Boosting AUC = 0.7820606
-  Boosting importance variables: failures, Medu,, absences, reason
--->
+Moreover, for Random Forest, Bagging and Boosting we conducted analysis of Variable Importance. The most feequent occuring variables were:  number of absences, mothers education, student health (measured by 1-5 scale), reason to choose particular school, weekly study time.
 
 # Regression
 
